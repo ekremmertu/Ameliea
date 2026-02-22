@@ -4,6 +4,7 @@ import "./globals.css";
 import { I18nProvider } from "@/components/providers/I18nProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -101,6 +102,7 @@ export default function RootLayout({
           <I18nProvider>
             {children}
             <ToastContainer />
+            <SpeedInsights />
           </I18nProvider>
         </ErrorBoundary>
       </body>

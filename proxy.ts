@@ -1,4 +1,4 @@
-// middleware.ts
+// proxy.ts (formerly middleware.ts – Next.js 16+ convention)
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
@@ -6,10 +6,13 @@ import { createServerClient } from "@supabase/ssr";
 // Helper function to check if email is admin (server-side)
 function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
-  
-  const adminEmailsStr = process.env.ADMIN_EMAILS || '';
-  const adminEmails = adminEmailsStr.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
-  
+
+  const adminEmailsStr = process.env.ADMIN_EMAILS || "";
+  const adminEmails = adminEmailsStr
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e.length > 0);
+
   return adminEmails.includes(email.toLowerCase());
 }
 
@@ -17,11 +20,11 @@ function isAdminEmail(email: string | null | undefined): boolean {
 async function hasActivePurchase(supabase: any, userId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('purchases')
-      .select('id, status, expires_at')
-      .eq('user_id', userId)
-      .eq('status', 'completed')
-      .order('purchased_at', { ascending: false })
+      .from("purchases")
+      .select("id, status, expires_at")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .order("purchased_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -40,12 +43,12 @@ async function hasActivePurchase(supabase: any, userId: string): Promise<boolean
 
     return true; // Active purchase found
   } catch (error) {
-    console.error('Error checking purchase in middleware:', error);
+    console.error("Error checking purchase in proxy:", error);
     return false;
   }
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   let res = NextResponse.next();
 
   const supabase = createServerClient(
@@ -80,7 +83,7 @@ export async function middleware(req: NextRequest) {
       url.pathname = "/admin";
       return NextResponse.redirect(url);
     }
-    
+
     // Check if user has active purchase (non-admin users need purchase to access dashboard)
     const hasPurchase = await hasActivePurchase(supabase, data.user.id);
     if (!hasPurchase) {
@@ -111,7 +114,11 @@ export async function middleware(req: NextRequest) {
   }
 
   // Protect invitation dashboard routes
-  if (req.nextUrl.pathname.includes("/invitation/") && req.nextUrl.pathname.includes("/dashboard") && !data.user) {
+  if (
+    req.nextUrl.pathname.includes("/invitation/") &&
+    req.nextUrl.pathname.includes("/dashboard") &&
+    !data.user
+  ) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", req.nextUrl.pathname);
