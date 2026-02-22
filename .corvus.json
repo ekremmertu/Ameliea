@@ -1,0 +1,28 @@
+{
+  "project_id": "CORVUS_20260115_223526",
+  "platform": "web",
+  "framework": "nextjs",
+  "version": "16.1.3",
+  "status": "active",
+  "generated_by": "corvus_os",
+  "last_sync": "2025-01-16T00:00:00Z",
+  "build_config": {
+    "command": "npm run build",
+    "test_command": "npm run ceo-check",
+    "dev_command": "npm run dev"
+  },
+  "premium_upgrade": {
+    "completed": true,
+    "date": "2025-01-16",
+    "features": [
+      "nextjs_14",
+      "typescript",
+      "framer_motion",
+      "design_tokens",
+      "i18n",
+      "seo",
+      "accessibility"
+    ]
+  }
+}
+

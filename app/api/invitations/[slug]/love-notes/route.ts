@@ -1,0 +1,100 @@
+/**
+ * Love Notes API Route
+ * POST /api/invitations/[slug]/love-notes
+ * Public endpoint (no authentication required)
+ */
+
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+const CreateLoveNoteSchema = z.object({
+  rsvp_id: z.string().uuid(),
+  guest_name: z.string().min(2).max(120),
+  guest_email: z.string().email().optional().or(z.literal('')),
+  message: z.string().min(1).max(1000),
+});
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const { slug } = await params;
+    const supabase = await createSupabaseServerClient();
+
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
+    }
+
+    const parsed = CreateLoveNoteSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { 
+          error: 'VALIDATION_ERROR', 
+          details: parsed.error.flatten() 
+        }, 
+        { status: 400 }
+      );
+    }
+
+    // Find invitation by slug
+    const { data: invitation, error: invError } = await supabase
+      .from('invitations')
+      .select('id, is_published')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (invError) {
+      console.error('Error finding invitation:', invError);
+      return NextResponse.json({ error: 'SERVER_ERROR', details: invError.message }, { status: 500 });
+    }
+
+    if (!invitation || !invitation.is_published) {
+      return NextResponse.json({ error: 'INVITATION_NOT_FOUND' }, { status: 404 });
+    }
+
+    // Verify RSVP belongs to this invitation
+    const { data: rsvp, error: rsvpError } = await supabase
+      .from('rsvps')
+      .select('id, invitation_id')
+      .eq('id', parsed.data.rsvp_id)
+      .eq('invitation_id', invitation.id)
+      .maybeSingle();
+
+    if (rsvpError || !rsvp) {
+      return NextResponse.json({ error: 'INVALID_RSVP' }, { status: 400 });
+    }
+
+    // Insert love note
+    const { data: loveNote, error: insertError } = await supabase
+      .from('love_notes')
+      .insert({
+        invitation_id: invitation.id,
+        rsvp_id: parsed.data.rsvp_id,
+        guest_name: parsed.data.guest_name,
+        guest_email: parsed.data.guest_email || null,
+        message: parsed.data.message,
+      })
+      .select('id, created_at')
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting love note:', insertError);
+      return NextResponse.json(
+        { error: 'SERVER_ERROR', details: insertError.message }, 
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ ok: true, love_note: loveNote }, { status: 201 });
+  } catch (error) {
+    console.error('Love note API error:', error);
+    return NextResponse.json(
+      { error: 'INTERNAL_SERVER_ERROR', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
