@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createSupabaseClient } from '@/lib/supabase/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      const supabase = createSupabaseClient();
+      const supabase = createSupabaseBrowserClient();
       
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,

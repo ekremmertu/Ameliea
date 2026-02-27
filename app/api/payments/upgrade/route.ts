@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       .single();
     
     if (purchaseError || !upgradePurchase) {
-      logger.dbError('INSERT', 'purchases', purchaseError);
+      logger.dbError('INSERT', 'purchases', purchaseError as Error);
       throw purchaseError;
     }
     

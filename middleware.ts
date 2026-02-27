@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Get client IP
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
   // Apply rate limiting based on path
   let rateLimit: { maxRequests: number; windowMs: number } | null = null;

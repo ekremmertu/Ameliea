@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     // Find invitation by slug
     const { data: inv, error: invErr } = await supabase
       .from('invitations')
-      .select('id,is_published,require_token,default_token')
+      .select('id,is_published,require_token,default_token,title,host_names,owner_id')
       .eq('slug', parsed.data.slug)
       .maybeSingle();
 

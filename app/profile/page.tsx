@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createSupabaseClient } from '@/lib/supabase/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
@@ -93,7 +93,7 @@ export default function ProfilePage() {
   };
 
   const handleSignOut = async () => {
-    const supabase = createSupabaseClient();
+    const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
     router.push('/');
   };

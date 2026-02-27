@@ -3,7 +3,7 @@
  * Handles file uploads for images, videos, and audio
  */
 
-import { createSupabaseClient } from './supabase/client';
+import { createSupabaseBrowserClient } from './supabase/client';
 import { FILE_UPLOAD_LIMITS } from './constants';
 
 export type FileType = 'image' | 'video' | 'audio';
@@ -48,13 +48,13 @@ export function validateFile(file: File, fileType: FileType): { valid: boolean; 
   }
 
   // Check file type
-  if (!limits.allowedTypes.includes(file.type)) {
+  if (!(limits.allowedTypes as readonly string[]).includes(file.type)) {
     return { valid: false, error: `File type ${file.type} is not allowed` };
   }
 
   // Check file extension
   const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-  if (!limits.allowedExtensions.includes(extension)) {
+  if (!(limits.allowedExtensions as readonly string[]).includes(extension)) {
     return { valid: false, error: `File extension ${extension} is not allowed` };
   }
 
@@ -91,7 +91,7 @@ export async function uploadFile(
       return { success: false, error: validation.error };
     }
 
-    const supabase = createSupabaseClient();
+    const supabase = createSupabaseBrowserClient();
     const bucketName = getBucketName(fileType);
     const filePath = generateFilePath(userId, invitationId, file.name);
 
@@ -136,7 +136,7 @@ export async function deleteFile(
   fileType: FileType
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = createSupabaseBrowserClient();
     const bucketName = getBucketName(fileType);
 
     const { error } = await supabase.storage
@@ -168,7 +168,7 @@ export async function getSignedUrl(
   expiresIn: number = 3600
 ): Promise<{ url?: string; error?: string }> {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = createSupabaseBrowserClient();
     const bucketName = getBucketName(fileType);
 
     const { data, error } = await supabase.storage
