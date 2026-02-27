@@ -1,7 +1,7 @@
 /**
- * Get Invitation by Slug API Route
- * GET /api/invitations/[slug]
- * Public endpoint (no authentication required for viewing published invitations)
+ * Invitation API Route
+ * GET /api/invitations/[slug] - Get invitation by slug (public)
+ * DELETE /api/invitations/[slug] - Delete invitation (owner only)
  * Supports token-based access control
  */
 
@@ -207,6 +207,88 @@ export async function GET(
     console.error('Error fetching invitation:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const { slug } = await params;
+
+    if (!slug) {
+      return NextResponse.json(
+        { error: 'INVALID_SLUG', message: 'Invitation slug is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createSupabaseServerClient();
+
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'UNAUTHORIZED', message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Find invitation and verify ownership
+    const { data: invitation, error: invError } = await supabase
+      .from('invitations')
+      .select('id, owner_id')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (invError) {
+      console.error('Error finding invitation:', invError);
+      return NextResponse.json(
+        { error: 'SERVER_ERROR', details: invError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!invitation) {
+      return NextResponse.json(
+        { error: 'INVITATION_NOT_FOUND', message: 'Invitation not found' },
+        { status: 404 }
+      );
+    }
+
+    if (invitation.owner_id !== user.id) {
+      return NextResponse.json(
+        { error: 'FORBIDDEN', message: 'Only the invitation owner can delete this invitation' },
+        { status: 403 }
+      );
+    }
+
+    // Delete invitation (cascade will delete related records)
+    const { error: deleteError } = await supabase
+      .from('invitations')
+      .delete()
+      .eq('id', invitation.id);
+
+    if (deleteError) {
+      console.error('Error deleting invitation:', deleteError);
+      return NextResponse.json(
+        { error: 'SERVER_ERROR', details: deleteError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: 'Invitation deleted successfully',
+    });
+
+  } catch (error) {
+    console.error('Error deleting invitation:', error);
+    return NextResponse.json(
+      { error: 'INTERNAL_SERVER_ERROR', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

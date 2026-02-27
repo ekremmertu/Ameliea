@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { initializePayment, type PaymentRequest } from '@/lib/iyzico';
 import { env } from '@/lib/env';
+import { getPlanPricing, isValidPlanType, PLAN_TYPES } from '@/lib/constants';
 
 const InitializePaymentSchema = z.object({
   plan_type: z.enum(['light', 'premium']),
@@ -100,9 +101,19 @@ export async function POST(req: Request) {
       }
     }
 
-    // Calculate amount based on plan type
-    const amount = parsed.data.plan_type === 'light' ? 1999.0 : 3999.0;
-    const planName = parsed.data.plan_type === 'light' ? 'Light Plan' : 'Premium Plan';
+    // SERVER-SIDE PRICING - Never trust client-side amounts
+    // Validate plan type
+    if (!isValidPlanType(parsed.data.plan_type)) {
+      return NextResponse.json(
+        { error: 'INVALID_PLAN_TYPE', message: 'Invalid plan type provided' },
+        { status: 400 }
+      );
+    }
+    
+    // Get pricing from server-side constants (cannot be manipulated by client)
+    const planPricing = getPlanPricing(parsed.data.plan_type);
+    const amount = planPricing.amount;
+    const planName = planPricing.name.tr;
 
     // Create a pending purchase record first (will be updated to completed after successful payment)
     const { data: purchase, error: purchaseError } = await supabase

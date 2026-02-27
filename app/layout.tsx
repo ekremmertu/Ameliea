@@ -5,6 +5,7 @@ import { I18nProvider } from "@/components/providers/I18nProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import SkipToContent from "@/components/layout/SkipToContent";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -98,9 +99,12 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${badScript.variable} antialiased`} suppressHydrationWarning>
+        <SkipToContent />
         <ErrorBoundary>
           <I18nProvider>
-            {children}
+            <div id="main-content">
+              {children}
+            </div>
             <ToastContainer />
             <SpeedInsights />
           </I18nProvider>

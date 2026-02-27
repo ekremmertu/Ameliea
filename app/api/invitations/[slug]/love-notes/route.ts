@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { sanitizeLoveNoteData } from '@/lib/sanitize';
 
 const CreateLoveNoteSchema = z.object({
   rsvp_id: z.string().uuid(),
@@ -67,15 +68,22 @@ export async function POST(
       return NextResponse.json({ error: 'INVALID_RSVP' }, { status: 400 });
     }
 
+    // Sanitize user input to prevent XSS attacks
+    const sanitizedData = sanitizeLoveNoteData({
+      guest_name: parsed.data.guest_name,
+      guest_email: parsed.data.guest_email,
+      message: parsed.data.message,
+    });
+
     // Insert love note
     const { data: loveNote, error: insertError } = await supabase
       .from('love_notes')
       .insert({
         invitation_id: invitation.id,
         rsvp_id: parsed.data.rsvp_id,
-        guest_name: parsed.data.guest_name,
-        guest_email: parsed.data.guest_email || null,
-        message: parsed.data.message,
+        guest_name: sanitizedData.guest_name,
+        guest_email: sanitizedData.guest_email || null,
+        message: sanitizedData.message,
       })
       .select('id, created_at')
       .single();

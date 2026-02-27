@@ -49,6 +49,24 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()'
           },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel-scripts.com https://va.vercel-scripts.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "connect-src 'self' https://*.supabase.co https://api.iyzipay.com https://sandbox-api.iyzipay.com wss://*.supabase.co https://vercel.live https://va.vercel-scripts.com",
+              "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.google.com",
+              "media-src 'self' https: blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          },
         ],
       },
     ];

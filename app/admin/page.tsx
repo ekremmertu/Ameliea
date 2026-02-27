@@ -1,111 +1,106 @@
 /**
  * Admin Dashboard Page
- * Protected route - only accessible by admin users
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { isAdminEmail } from '@/lib/admin';
-import { motion } from 'framer-motion';
-import { tokens } from '@/lib/design-tokens';
-import { useI18n } from '@/components/providers/I18nProvider';
-import { BackButton } from '@/components/ui/BackButton';
 
-interface UserStats {
-  id: string;
-  email: string;
-  created_at: string;
-  invitations_count: number;
-  rsvps_count: number;
-  token_metrics?: {
-    totalSent: number;
-    totalOpened: number;
-    totalResponded: number;
+interface Analytics {
+  summary: {
+    totalInvitations: number;
+    publishedInvitations: number;
+    totalRsvps: number;
+    attendingRsvps: number;
+    totalPurchases: number;
+    completedPurchases: number;
+    totalRevenue: number;
+    totalTestimonials: number;
+    approvedTestimonials: number;
   };
+  planDistribution: Record<string, number>;
+  dailyStats: Array<{
+    date: string;
+    invitations: number;
+    rsvps: number;
+    purchases: number;
+    revenue: number;
+  }>;
 }
 
-interface InvitationStats {
+interface PendingTestimonial {
   id: string;
-  slug: string;
-  title: string;
-  owner_email: string;
+  name: string;
+  message: string;
   created_at: string;
-  is_published: boolean;
-  rsvps_count: number;
-}
-
-interface PlatformStats {
-  totalUsers: number;
-  totalInvitations: number;
-  totalRSVPs: number;
-  publishedInvitations: number;
-  activeUsers: number;
-  newUsersLast30Days: number;
-  newInvitationsLast30Days: number;
-  totalTokensSent: number;
-  totalTokensOpened: number;
-  totalTokensResponded: number;
+  invitations: {
+    slug: string;
+    bride_name: string;
+    groom_name: string;
+  };
 }
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { lang } = useI18n();
-  const supabase = createSupabaseBrowserClient();
-  
-  const [user, setUser] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [pendingTestimonials, setPendingTestimonials] = useState<PendingTestimonial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
-  const [userStats, setUserStats] = useState<UserStats[]>([]);
-  const [invitationStats, setInvitationStats] = useState<InvitationStats[]>([]);
+  const [error, setError] = useState('');
+  const [selectedTestimonials, setSelectedTestimonials] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        
-        if (!currentUser) {
-          router.push('/login?redirect=/admin');
-          return;
-        }
+    fetchData();
+  }, []);
 
-        setUser(currentUser);
-
-        // Check if user is admin
-        if (!isAdminEmail(currentUser.email)) {
-          router.push('/dashboard');
-          return;
-        }
-
-        setIsAdmin(true);
-        await fetchAdminData();
-      } catch (error) {
-        console.error('Error checking admin:', error);
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAdmin();
-  }, [router, supabase]);
-
-  const fetchAdminData = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch('/api/admin/stats');
-      if (!response.ok) {
-        throw new Error('Failed to fetch admin stats');
+      setLoading(true);
+      const [analyticsRes, testimonialsRes] = await Promise.all([
+        fetch('/api/admin/analytics?days=30'),
+        fetch('/api/admin/testimonials/moderate'),
+      ]);
+
+      if (analyticsRes.status === 403 || testimonialsRes.status === 403) {
+        router.push('/');
+        return;
       }
 
-      const data = await response.json();
-      setPlatformStats(data.platformStats);
-      setUserStats(data.userStats);
-      setInvitationStats(data.invitationStats);
-    } catch (error) {
-      console.error('Error fetching admin data:', error);
+      if (!analyticsRes.ok || !testimonialsRes.ok) {
+        throw new Error('Failed to fetch admin data');
+      }
+
+      const analyticsData = await analyticsRes.json();
+      const testimonialsData = await testimonialsRes.json();
+
+      setAnalytics(analyticsData);
+      setPendingTestimonials(testimonialsData.testimonials || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const moderateTestimonials = async (action: 'approve' | 'reject') => {
+    if (selectedTestimonials.size === 0) return;
+
+    try {
+      const res = await fetch('/api/admin/testimonials/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testimonialIds: Array.from(selectedTestimonials),
+          action,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Moderation failed');
+
+      setSelectedTestimonials(new Set());
+      fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Moderation failed');
     }
   };
 
@@ -113,359 +108,161 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--crimson-base)' }}></div>
-          <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-            {lang === 'tr' ? 'Yükleniyor...' : 'Loading...'}
-          </p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-text-secondary">Loading admin dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAdmin) {
-    return null; // Will redirect
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-gold text-white rounded hover:bg-gold-dark"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen py-12 px-4" style={{ background: 'var(--bg-primary)' }}>
+    <div className="min-h-screen bg-bg-primary p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Back Button - positioned relative to container */}
-        <div className="mb-6">
-          <BackButton href="/" position="relative" />
-        </div>
-        
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ color: tokens.colors.text.primary }}>
-            {lang === 'tr' ? 'Admin Paneli' : 'Admin Dashboard'}
-          </h1>
-          <p className="text-lg" style={{ color: tokens.colors.text.secondary }}>
-            {lang === 'tr' ? 'Platform İstatistikleri ve Yönetim' : 'Platform Statistics & Management'}
-          </p>
-          {user?.email && (
-            <p className="text-sm mt-1" style={{ color: tokens.colors.text.muted }}>
-              {lang === 'tr' ? 'Giriş yapan:' : 'Signed in as:'} {user.email}
-            </p>
-          )}
-        </div>
+        <h1 className="text-4xl font-bold mb-8 text-ink">Admin Dashboard</h1>
 
-        {/* Platform Statistics - Overview */}
-        {platformStats && (
-          <div className="grid md:grid-cols-4 gap-6 mb-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: tokens.colors.text.primary }}>
-                {platformStats.totalUsers}
-              </div>
-              <div className="text-sm mb-1" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Toplam Kullanıcı' : 'Total Users'}
-              </div>
-              <div className="text-xs" style={{ color: 'var(--gold-base)' }}>
-                +{platformStats.newUsersLast30Days} {lang === 'tr' ? 'son 30 gün' : 'last 30 days'}
-              </div>
-            </motion.div>
+        {/* Summary Cards */}
+        {analytics && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-sm text-text-secondary mb-2">Total Invitations</h3>
+              <p className="text-3xl font-bold text-ink">{analytics.summary.totalInvitations}</p>
+              <p className="text-sm text-text-muted mt-1">
+                {analytics.summary.publishedInvitations} published
+              </p>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: 'var(--crimson-base)' }}>
-                {platformStats.totalInvitations}
-              </div>
-              <div className="text-sm mb-1" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Toplam Davetiye' : 'Total Invitations'}
-              </div>
-              <div className="text-xs" style={{ color: 'var(--gold-base)' }}>
-                +{platformStats.newInvitationsLast30Days} {lang === 'tr' ? 'son 30 gün' : 'last 30 days'}
-              </div>
-            </motion.div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-sm text-text-secondary mb-2">Total RSVPs</h3>
+              <p className="text-3xl font-bold text-ink">{analytics.summary.totalRsvps}</p>
+              <p className="text-sm text-text-muted mt-1">
+                {analytics.summary.attendingRsvps} attending
+              </p>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: 'var(--gold-base)' }}>
-                {platformStats.publishedInvitations}
-              </div>
-              <div className="text-sm mb-1" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Yayınlanan' : 'Published'}
-              </div>
-              <div className="text-xs" style={{ color: tokens.colors.text.secondary }}>
-                {platformStats.totalInvitations > 0 
-                  ? Math.round((platformStats.publishedInvitations / platformStats.totalInvitations) * 100) 
-                  : 0}% {lang === 'tr' ? 'yayın oranı' : 'publish rate'}
-              </div>
-            </motion.div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-sm text-text-secondary mb-2">Revenue</h3>
+              <p className="text-3xl font-bold text-crimson">
+                ₺{analytics.summary.totalRevenue.toFixed(2)}
+              </p>
+              <p className="text-sm text-text-muted mt-1">
+                {analytics.summary.completedPurchases} purchases
+              </p>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: tokens.colors.text.primary }}>
-                {platformStats.totalRSVPs}
-              </div>
-              <div className="text-sm mb-1" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Toplam RSVP' : 'Total RSVPs'}
-              </div>
-              <div className="text-xs" style={{ color: tokens.colors.text.secondary }}>
-                {platformStats.publishedInvitations > 0 
-                  ? Math.round((platformStats.totalRSVPs / platformStats.publishedInvitations) * 10) / 10 
-                  : 0} {lang === 'tr' ? 'RSVP/davetiye' : 'RSVPs/invitation'}
-              </div>
-            </motion.div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-sm text-text-secondary mb-2">Testimonials</h3>
+              <p className="text-3xl font-bold text-ink">{analytics.summary.totalTestimonials}</p>
+              <p className="text-sm text-text-muted mt-1">
+                {pendingTestimonials.length} pending
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Growth & Engagement Metrics */}
-        {platformStats && (
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: 'var(--crimson-base)' }}>
-                {platformStats.activeUsers}
+        {/* Pending Testimonials */}
+        {pendingTestimonials.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-ink">Pending Testimonials</h2>
+              <div className="space-x-2">
+                <button
+                  onClick={() => moderateTestimonials('approve')}
+                  disabled={selectedTestimonials.size === 0}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                >
+                  Approve ({selectedTestimonials.size})
+                </button>
+                <button
+                  onClick={() => moderateTestimonials('reject')}
+                  disabled={selectedTestimonials.size === 0}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                >
+                  Reject ({selectedTestimonials.size})
+                </button>
               </div>
-              <div className="text-sm" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Aktif Kullanıcı (30 gün)' : 'Active Users (30 days)'}
-              </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: 'var(--gold-base)' }}>
-                {platformStats.totalTokensSent}
-              </div>
-              <div className="text-sm" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Gönderilen Token' : 'Tokens Sent'}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: 'var(--crimson-base)' }}>
-                {platformStats.totalTokensOpened}
-              </div>
-              <div className="text-sm mb-1" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Açılan Link' : 'Links Opened'}
-              </div>
-              <div className="text-xs" style={{ color: tokens.colors.text.secondary }}>
-                {platformStats.totalTokensSent > 0 
-                  ? Math.round((platformStats.totalTokensOpened / platformStats.totalTokensSent) * 100) 
-                  : 0}% {lang === 'tr' ? 'açılma oranı' : 'open rate'}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: tokens.colors.text.primary }}>
-                {platformStats.totalTokensResponded}
-              </div>
-              <div className="text-sm mb-1" style={{ color: tokens.colors.text.secondary }}>
-                {lang === 'tr' ? 'Yanıt Verilen' : 'Responded'}
-              </div>
-              <div className="text-xs" style={{ color: tokens.colors.text.secondary }}>
-                {platformStats.totalTokensOpened > 0 
-                  ? Math.round((platformStats.totalTokensResponded / platformStats.totalTokensOpened) * 100) 
-                  : 0}% {lang === 'tr' ? 'yanıt oranı' : 'response rate'}
-              </div>
-            </motion.div>
+            <div className="space-y-4">
+              {pendingTestimonials.map((testimonial) => (
+                <div key={testimonial.id} className="border rounded p-4 flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedTestimonials.has(testimonial.id)}
+                    onChange={(e) => {
+                      const newSet = new Set(selectedTestimonials);
+                      if (e.target.checked) {
+                        newSet.add(testimonial.id);
+                      } else {
+                        newSet.delete(testimonial.id);
+                      }
+                      setSelectedTestimonials(newSet);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-semibold">{testimonial.name}</p>
+                        <p className="text-sm text-text-secondary">
+                          For: {testimonial.invitations.bride_name} & {testimonial.invitations.groom_name}
+                        </p>
+                      </div>
+                      <p className="text-sm text-text-muted">
+                        {new Date(testimonial.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <p className="text-text-primary">{testimonial.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* User Statistics */}
-        <div className="rounded-xl overflow-hidden mb-8" style={{ backgroundColor: 'var(--bg-panel-strong)' }}>
-          <div className="p-6 border-b" style={{ borderColor: 'var(--border-base)' }}>
-            <h2 className="text-2xl font-bold" style={{ color: tokens.colors.text.primary }}>
-              {lang === 'tr' ? 'Kullanıcı İstatistikleri' : 'User Statistics'}
-            </h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b" style={{ borderColor: 'var(--border-base)' }}>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Email' : 'Email'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Davetiye Sayısı' : 'Invitations'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'RSVP Sayısı' : 'RSVPs'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Token Metrikleri' : 'Token Metrics'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Kayıt Tarihi' : 'Created At'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {userStats.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center" style={{ color: tokens.colors.text.secondary }}>
-                      {lang === 'tr' ? 'Kullanıcı bulunamadı' : 'No users found'}
-                    </td>
-                  </tr>
-                ) : (
-                  userStats.map((user, index) => (
-                    <motion.tr
-                      key={user.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border-b hover:bg-opacity-50 transition-colors"
-                      style={{ borderColor: 'var(--border-base)' }}
-                    >
-                      <td className="p-4" style={{ color: tokens.colors.text.primary }}>
-                        {user.email}
-                      </td>
-                      <td className="p-4" style={{ color: tokens.colors.text.primary }}>
-                        {user.invitations_count}
-                      </td>
-                      <td className="p-4" style={{ color: tokens.colors.text.primary }}>
-                        {user.rsvps_count}
-                      </td>
-                      <td className="p-4 text-xs" style={{ color: tokens.colors.text.secondary }}>
-                        {user.token_metrics ? (
-                          <div className="space-y-1">
-                            <div>{lang === 'tr' ? 'Gönderilen:' : 'Sent:'} {user.token_metrics.totalSent}</div>
-                            <div>{lang === 'tr' ? 'Açılan:' : 'Opened:'} {user.token_metrics.totalOpened}</div>
-                            <div>{lang === 'tr' ? 'Yanıtlanan:' : 'Responded:'} {user.token_metrics.totalResponded}</div>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="p-4 text-sm" style={{ color: tokens.colors.text.secondary }}>
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Invitation Statistics */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-panel-strong)' }}>
-          <div className="p-6 border-b" style={{ borderColor: 'var(--border-base)' }}>
-            <h2 className="text-2xl font-bold" style={{ color: tokens.colors.text.primary }}>
-              {lang === 'tr' ? 'Davetiye İstatistikleri' : 'Invitation Statistics'}
-            </h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b" style={{ borderColor: 'var(--border-base)' }}>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Başlık' : 'Title'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Sahibi' : 'Owner'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'RSVP Sayısı' : 'RSVPs'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Durum' : 'Status'}
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Oluşturulma' : 'Created'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {invitationStats.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center" style={{ color: tokens.colors.text.secondary }}>
-                      {lang === 'tr' ? 'Davetiye bulunamadı' : 'No invitations found'}
-                    </td>
-                  </tr>
-                ) : (
-                  invitationStats.map((inv, index) => (
-                    <motion.tr
-                      key={inv.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border-b hover:bg-opacity-50 transition-colors"
-                      style={{ borderColor: 'var(--border-base)' }}
-                    >
-                      <td className="p-4" style={{ color: tokens.colors.text.primary }}>
-                        <a
-                          href={`/invitation/${inv.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline"
-                          style={{ color: 'var(--crimson-base)' }}
-                        >
-                          {inv.title}
-                        </a>
-                      </td>
-                      <td className="p-4" style={{ color: tokens.colors.text.primary }}>
-                        {inv.owner_email}
-                      </td>
-                      <td className="p-4" style={{ color: tokens.colors.text.primary }}>
-                        {inv.rsvps_count}
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className="px-3 py-1 rounded-full text-xs font-medium"
-                          style={{
-                            backgroundColor: inv.is_published ? 'var(--crimson-base)' : 'var(--ink-base)',
-                            color: 'white',
-                          }}
-                        >
-                          {inv.is_published
-                            ? (lang === 'tr' ? 'Yayında' : 'Published')
-                            : (lang === 'tr' ? 'Taslak' : 'Draft')}
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm" style={{ color: tokens.colors.text.secondary }}>
-                        {new Date(inv.created_at).toLocaleDateString()}
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold text-ink mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => router.push('/admin/users')}
+              className="p-4 border rounded hover:bg-gray-50 text-left"
+            >
+              <h3 className="font-semibold mb-1">Manage Users</h3>
+              <p className="text-sm text-text-secondary">View and manage user accounts</p>
+            </button>
+            <button
+              onClick={() => router.push('/admin/invitations')}
+              className="p-4 border rounded hover:bg-gray-50 text-left"
+            >
+              <h3 className="font-semibold mb-1">View Invitations</h3>
+              <p className="text-sm text-text-secondary">Browse all invitations</p>
+            </button>
+            <button
+              onClick={() => router.push('/admin/payments')}
+              className="p-4 border rounded hover:bg-gray-50 text-left"
+            >
+              <h3 className="font-semibold mb-1">Payment History</h3>
+              <p className="text-sm text-text-secondary">View all transactions</p>
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

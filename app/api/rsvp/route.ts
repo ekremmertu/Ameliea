@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { sanitizeRsvpData } from '@/lib/sanitize';
+import { sendRSVPConfirmation, sendRSVPNotificationToOwner } from '@/lib/notifications';
 
 const RSVPSubmitSchema = z.object({
   slug: z.string().min(3).max(64),
@@ -96,15 +98,23 @@ export async function POST(req: Request) {
       }
     }
 
+    // Sanitize user input to prevent XSS attacks
+    const sanitizedData = sanitizeRsvpData({
+      full_name: parsed.data.full_name,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      note: parsed.data.note,
+    });
+
     // Insert RSVP - selected_events may not exist in DB yet, so we'll try without it first if it fails
     const insertData: any = {
       invitation_id: inv.id,
-      full_name: parsed.data.full_name,
-      email: parsed.data.email || null,
-      phone: parsed.data.phone || null,
+      full_name: sanitizedData.full_name,
+      email: sanitizedData.email || null,
+      phone: sanitizedData.phone || null,
       attendance: parsed.data.attendance,
       guests_count: parsed.data.guests_count,
-      note: parsed.data.note || null,
+      note: sanitizedData.note || null,
     };
 
     // Only add selected_events if it's provided (column may not exist yet)
@@ -166,6 +176,27 @@ export async function POST(req: Request) {
           responded_at: new Date().toISOString(),
         })
         .eq('id', guestTokenId);
+    }
+
+    // Send notifications (async, don't wait)
+    if (sanitizedData.email) {
+      sendRSVPConfirmation(
+        sanitizedData.email,
+        sanitizedData.full_name,
+        inv.title || inv.host_names || 'Wedding',
+        parsed.data.attendance
+      ).catch(err => console.error('RSVP confirmation email failed:', err));
+    }
+
+    // Notify invitation owner
+    const { data: owner } = await supabase.auth.admin.getUserById(inv.owner_id);
+    if (owner?.user?.email) {
+      sendRSVPNotificationToOwner(
+        owner.user.email,
+        sanitizedData.full_name,
+        inv.title || inv.host_names || 'Wedding',
+        parsed.data.attendance
+      ).catch(err => console.error('Owner notification failed:', err));
     }
 
     return NextResponse.json({ ok: true, rsvp }, { status: 201 });
