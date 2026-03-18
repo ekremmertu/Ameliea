@@ -155,7 +155,7 @@ export async function GET(
 
     // Sahiplik: giriş yapan kullanıcı bu davetiyenin sahibi mi? (sadece sahip yönetim linki görsün)
     const { data: { user } } = await supabase.auth.getUser();
-    const isOwner = !!(user && invitation.user_id && invitation.user_id === user.id);
+    const isOwner = !!(user && invitation.owner_id && invitation.owner_id === user.id);
 
     // Get theme configuration
     const themeId = (invitation.theme_id || 'elegant') as ThemeId;
