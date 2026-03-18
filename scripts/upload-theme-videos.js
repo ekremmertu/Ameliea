@@ -24,20 +24,21 @@ if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('your-project')) {
   process.exit(1);
 }
 
+// Supabase Storage ASCII-safe key'leri (Türkçe karakter kabul etmiyor)
 const THEMES = [
-  { folderName: 'Aşk',             videoFile: 'Video.mp4' },
-  { folderName: 'Elit',            videoFile: 'Video.mp4' },
-  { folderName: 'Ruhun Güzelliği', videoFile: 'Video.mp4' },
-  { folderName: 'Vow',             videoFile: 'Video.mp4' },
-  { folderName: 'Bloom',           videoFile: 'Video.mp4' },
+  { folderName: 'Aşk',             storageKey: 'ask',              videoFile: 'Video.mp4' },
+  { folderName: 'Elit',            storageKey: 'elit',             videoFile: 'Video.mp4' },
+  { folderName: 'Ruhun Güzelliği', storageKey: 'ruhun-guzelligi', videoFile: 'Video.mp4' },
+  { folderName: 'Vow',             storageKey: 'vow',              videoFile: 'Video.mp4' },
+  { folderName: 'Bloom',           storageKey: 'bloom',            videoFile: 'Video.mp4' },
 ];
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public', 'temalar');
 
 async function uploadFile(localPath, storagePath) {
   const fileBuffer = fs.readFileSync(localPath);
-  const encodedPath = storagePath.split('/').map(encodeURIComponent).join('/');
-  const url = new URL(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodedPath}`);
+  // storagePath zaten ASCII-safe, encode etme
+  const url = new URL(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${storagePath}`);
 
   return new Promise((resolve, reject) => {
     const options = {
@@ -119,7 +120,8 @@ async function main() {
 
   for (const theme of THEMES) {
     const localFile = path.join(PUBLIC_DIR, theme.folderName, theme.videoFile);
-    const storagePath = `temalar/${theme.folderName}/${theme.videoFile}`;
+    // ASCII-safe storage path (Türkçe karakter yok)
+    const storagePath = `temalar/${theme.storageKey}/${theme.videoFile}`;
 
     if (!fs.existsSync(localFile)) {
       console.warn(`⚠️  Dosya bulunamadı: ${localFile}`);
@@ -127,11 +129,11 @@ async function main() {
     }
 
     const sizeMB = (fs.statSync(localFile).size / 1024 / 1024).toFixed(1);
-    process.stdout.write(`📤 ${theme.folderName}/Video.mp4 (${sizeMB} MB) yükleniyor... `);
+    process.stdout.write(`📤 ${theme.folderName}/Video.mp4 → ${storagePath} (${sizeMB} MB) yükleniyor... `);
 
     try {
       await uploadFile(localFile, storagePath);
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent('temalar')}/${encodeURIComponent(theme.folderName)}/${encodeURIComponent(theme.videoFile)}`;
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;
       console.log(`✅`);
       console.log(`   URL: ${publicUrl}`);
     } catch (err) {

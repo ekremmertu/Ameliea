@@ -11,33 +11,35 @@ import type { ThemeId } from '@/lib/themes';
 const BASE = '/temalar';
 const SUPABASE_STORAGE_BUCKET = 'theme-assets';
 
-/**
- * Supabase Storage public URL oluşturur.
- * NEXT_PUBLIC_SUPABASE_URL tanımlıysa Supabase'den, yoksa lokal /public'ten servis edilir.
- */
-function videoUrl(folder: string): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (supabaseUrl && !supabaseUrl.includes('your-project')) {
-    return `${supabaseUrl}/storage/v1/object/public/${SUPABASE_STORAGE_BUCKET}/temalar/${encodeURIComponent(folder)}/Video.mp4`;
-  }
-  // Fallback: lokal public klasör (geliştirme ortamı)
-  return `${BASE}/${encodeURIComponent(folder)}/Video.mp4`;
-}
-
-/** Klasör adı → tema dosya uzantıları (Görsel, Zarf) */
+/** Klasör adı → tema dosya uzantıları (Görsel, Zarf) + Supabase ASCII-safe storage key */
 export const THEME_FOLDER_ASSETS: Array<{
   folderName: string;
+  /** Supabase Storage ASCII-safe path (Türkçe karakter kabul etmiyor) */
+  storageKey: string;
   themeId: ThemeId;
   styleKey: string;
   görselExt: string;
   zarfExt: string;
 }> = [
-  { folderName: 'Aşk', themeId: 'romantic', styleKey: 'style_1', görselExt: 'jpeg', zarfExt: 'jpg' },
-  { folderName: 'Elit', themeId: 'elegant', styleKey: 'style_2', görselExt: 'jpg', zarfExt: 'jpg' },
-  { folderName: 'Ruhun Güzelliği', themeId: 'modern', styleKey: 'style_3', görselExt: 'jpeg', zarfExt: 'webp' },
-  { folderName: 'Vow', themeId: 'classic', styleKey: 'style_4', görselExt: 'jpg', zarfExt: 'jpg' },
-  { folderName: 'Bloom', themeId: 'minimal', styleKey: 'style_5', görselExt: 'jpeg', zarfExt: 'jpg' },
+  { folderName: 'Aşk',             storageKey: 'ask',              themeId: 'romantic', styleKey: 'style_1', görselExt: 'jpeg', zarfExt: 'jpg' },
+  { folderName: 'Elit',            storageKey: 'elit',             themeId: 'elegant',  styleKey: 'style_2', görselExt: 'jpg',  zarfExt: 'jpg' },
+  { folderName: 'Ruhun Güzelliği', storageKey: 'ruhun-guzelligi', themeId: 'modern',   styleKey: 'style_3', görselExt: 'jpeg', zarfExt: 'webp' },
+  { folderName: 'Vow',             storageKey: 'vow',              themeId: 'classic',  styleKey: 'style_4', görselExt: 'jpg',  zarfExt: 'jpg' },
+  { folderName: 'Bloom',           storageKey: 'bloom',            themeId: 'minimal',  styleKey: 'style_5', görselExt: 'jpeg', zarfExt: 'jpg' },
 ];
+
+/**
+ * Supabase Storage public URL oluşturur (ASCII-safe storageKey kullanır).
+ * NEXT_PUBLIC_SUPABASE_URL tanımlıysa Supabase'den, yoksa lokal /public'ten servis edilir.
+ */
+function videoUrl(storageKey: string, folderName: string): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl && !supabaseUrl.includes('your-project')) {
+    return `${supabaseUrl}/storage/v1/object/public/${SUPABASE_STORAGE_BUCKET}/temalar/${storageKey}/Video.mp4`;
+  }
+  // Fallback: lokal public klasör (geliştirme ortamı / Supabase yokken)
+  return `${BASE}/${encodeURIComponent(folderName)}/Video.mp4`;
+}
 
 function path(base: string, folder: string, file: string): string {
   return `${base}/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
@@ -65,7 +67,7 @@ export function getThemeAssetsForHomepage(): Array<{
     folderName: t.folderName,
     imageUrl: path(BASE, t.folderName, `Görsel.${t.görselExt}`),
     zarfUrl: path(BASE, t.folderName, `Zarf.${t.zarfExt}`),
-    videoUrl: videoUrl(t.folderName),
+    videoUrl: videoUrl(t.storageKey, t.folderName),
   }));
 }
 
@@ -80,7 +82,7 @@ export function getThemeAssetsByStyleKey(styleKey: string): {
   if (!t) return null;
   return {
     imageUrl: path(BASE, t.folderName, `Görsel.${t.görselExt}`),
-    videoUrl: videoUrl(t.folderName),
+    videoUrl: videoUrl(t.storageKey, t.folderName),
     zarfUrl: path(BASE, t.folderName, `Zarf.${t.zarfExt}`),
     themeId: t.themeId,
   };
@@ -94,7 +96,7 @@ export function getThemeAssetsByThemeId(themeId: ThemeId): {
 } {
   const t = THEME_FOLDER_ASSETS.find((x) => x.themeId === themeId) ?? THEME_FOLDER_ASSETS[0];
   return {
-    videoUrl: videoUrl(t.folderName),
+    videoUrl: videoUrl(t.storageKey, t.folderName),
     zarfUrl: path(BASE, t.folderName, `Zarf.${t.zarfExt}`),
     imageUrl: path(BASE, t.folderName, `Görsel.${t.görselExt}`),
   };
