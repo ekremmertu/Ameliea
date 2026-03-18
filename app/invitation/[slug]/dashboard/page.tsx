@@ -53,7 +53,7 @@ export default function InvitationDashboard() {
   const [rsvpResponses, setRsvpResponses] = useState<RSVPResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ email?: string } | null>(null);
   const [loveNotes, setLoveNotes] = useState<Array<{
     id: string;
     guest_name: string;
@@ -70,7 +70,7 @@ export default function InvitationDashboard() {
         router.push(`/login?redirect=/invitation/${slug}/dashboard`);
         return;
       }
-      setUser(user as any);
+      setUser(user ? { email: user.email } : null);
       fetchData();
     });
   }, [slug, router, supabase]);
@@ -118,7 +118,7 @@ export default function InvitationDashboard() {
         .eq('invitation_id', invitation.id)
         .order('order_index', { ascending: true });
 
-      const questionMap = new Map((questions || []).map((q: any) => [q.id, q.question]));
+      const questionMap = new Map((questions || []).map((q: { id: string; question: string }) => [q.id, q.question]));
 
       // Fetch guest answers
       const { data: answers } = await supabase
@@ -128,7 +128,7 @@ export default function InvitationDashboard() {
 
       // Group answers by rsvp_id
       const answersByRsvp = new Map<string, GuestAnswer[]>();
-      (answers || []).forEach((answer: any) => {
+      (answers || []).forEach((answer: { rsvp_id: string; question_id: string; answer: string }) => {
         if (!answersByRsvp.has(answer.rsvp_id)) {
           answersByRsvp.set(answer.rsvp_id, []);
         }
@@ -139,7 +139,8 @@ export default function InvitationDashboard() {
         });
       });
 
-      setRsvpResponses((rsvps || []).map((rsvp: any) => ({
+      interface RsvpRow { id: string; full_name: string; email?: string; phone?: string; attendance: string; guests_count: number; note?: string; selected_events?: string[]; created_at: string }
+      setRsvpResponses((rsvps || []).map((rsvp: RsvpRow) => ({
         id: rsvp.id,
         name: rsvp.full_name,
         email: rsvp.email,
