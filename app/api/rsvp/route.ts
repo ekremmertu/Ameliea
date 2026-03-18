@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeRsvpData } from '@/lib/sanitize';
 import { sendRSVPConfirmation, sendRSVPNotificationToOwner } from '@/lib/notifications';
+import { apiError, validationError, parseJsonBodyOrError, ErrorCodes } from '@/lib/api-response';
 
 const RSVPSubmitSchema = z.object({
   slug: z.string().min(3).max(64),
@@ -27,20 +28,13 @@ export async function POST(req: Request) {
   try {
     const supabase = await createSupabaseServerClient();
 
-    const body = await req.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
-    }
+    const parsedBody = await parseJsonBodyOrError(req);
+    if (parsedBody.response) return parsedBody.response;
+    const body = parsedBody.body;
 
     const parsed = RSVPSubmitSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { 
-          error: 'VALIDATION_ERROR', 
-          details: parsed.error.flatten() 
-        }, 
-        { status: 400 }
-      );
+      return validationError(parsed.error);
     }
 
     // Bot trap: if website field is filled, silently accept (it's a bot)
@@ -57,21 +51,18 @@ export async function POST(req: Request) {
 
     if (invErr) {
       console.error('Error finding invitation:', invErr);
-      return NextResponse.json({ error: 'SERVER_ERROR', details: invErr.message }, { status: 500 });
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, invErr.message);
     }
 
     if (!inv || !inv.is_published) {
-      return NextResponse.json({ error: 'INVITATION_NOT_FOUND' }, { status: 404 });
+      return apiError(ErrorCodes.NOT_FOUND, 404, 'Invitation not found');
     }
 
     // Token kontrolü (eğer require_token true ise)
     let guestTokenId: string | null = null;
     if (inv.require_token) {
       if (!parsed.data.token) {
-        return NextResponse.json(
-          { error: 'TOKEN_REQUIRED', message: 'Token is required for this invitation' },
-          { status: 403 }
-        );
+        return apiError(ErrorCodes.FORBIDDEN, 403, 'Token is required for this invitation');
       }
 
       // Default token kontrolü
@@ -88,10 +79,7 @@ export async function POST(req: Request) {
           .maybeSingle();
 
         if (tokenError || !guestToken) {
-          return NextResponse.json(
-            { error: 'INVALID_TOKEN', message: 'Invalid token' },
-            { status: 403 }
-          );
+          return apiError(ErrorCodes.FORBIDDEN, 403, 'Invalid token');
         }
 
         guestTokenId = guestToken.id;
@@ -141,10 +129,7 @@ export async function POST(req: Request) {
         
         if (retryError) {
           console.error('Error inserting RSVP (retry):', retryError);
-          return NextResponse.json(
-            { error: 'SERVER_ERROR', details: retryError.message }, 
-            { status: 500 }
-          );
+          return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, retryError.message);
         }
 
         // Token'ı "responded" olarak işaretle
@@ -161,10 +146,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, rsvp: rsvpRetry }, { status: 201 });
       }
 
-      return NextResponse.json(
-        { error: 'SERVER_ERROR', details: error.message }, 
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error.message);
     }
 
     // Token'ı "responded" olarak işaretle
@@ -202,9 +184,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, rsvp }, { status: 201 });
   } catch (error) {
     console.error('RSVP API error:', error);
-    return NextResponse.json(
-      { error: 'INTERNAL_SERVER_ERROR', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+    return apiError(
+      ErrorCodes.INTERNAL_SERVER_ERROR,
+      500,
+      undefined,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }

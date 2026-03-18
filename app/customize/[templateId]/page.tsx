@@ -13,10 +13,12 @@ import { EmojiPicker } from '@/components/ui/EmojiPicker';
 import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { BackButton } from '@/components/ui/BackButton';
 import { ThemeId, THEMES, getTheme } from '@/lib/themes';
+import { getThemeIdFromTemplateId } from '@/lib/theme-assets';
 import { getUserPlanType, type PlanType } from '@/lib/purchase';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { showToast } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
+import { env } from '@/lib/env';
 
 interface ScheduleItem {
   time: string;
@@ -171,12 +173,16 @@ export default function CustomizePage() {
       enableContact: false,
       enableSchedule: true,
     },
-    themeId: 'elegant' as ThemeId,
-    theme: {
-      primaryColor: THEMES.elegant.colors.primary,
-      secondaryColor: THEMES.elegant.colors.secondary,
-      fontFamily: THEMES.elegant.fonts.heading as 'serif' | 'sans',
-    },
+    themeId: getThemeIdFromTemplateId(templateId || 'style_2'),
+    theme: (() => {
+      const id = getThemeIdFromTemplateId(templateId || 'style_2');
+      const th = THEMES[id];
+      return {
+        primaryColor: th.colors.primary,
+        secondaryColor: th.colors.secondary,
+        fontFamily: th.fonts.heading as 'serif' | 'sans',
+      };
+    })(),
     faqs: [],
     enableFAQs: false,
     guestQuestions: [{ question: '' }], // Default 1 soru
@@ -673,7 +679,7 @@ export default function CustomizePage() {
                   </a>
                   <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden border-2" style={{ borderColor: formData.theme.primaryColor }}>
                     <iframe
-                      src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&q=${encodeURIComponent(formData.venueAddress)}`}
+                      src={`https://www.google.com/maps/embed/v1/place?key=${env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&q=${encodeURIComponent(formData.venueAddress)}`}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}

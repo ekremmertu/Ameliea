@@ -65,17 +65,26 @@ function formatTime(dateStr?: string) {
 
 export function GuestOpeningFlow({ data, onComplete }: GuestOpeningFlowProps) {
   const { lang } = useI18n();
-  const [stage, setStage] = useState<Stage>('info');
+  /** Davetli linki açınca önce tema videosu, sonra bilgiler, sonra Zarf kapak → ana davetiye (detay + anket) */
+  const [stage, setStage] = useState<Stage>('video');
   const [videoStarted, setVideoStarted] = useState(false);
+  const [videoLoadError, setVideoLoadError] = useState(false);
+  const [coverLoadError, setCoverLoadError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const skipLabel = lang === 'tr' ? 'Geç' : 'Skip';
+
+  const handleSkip = useCallback(() => {
+    if (stage === 'video') setStage('info');
+    else if (stage === 'info') setStage('cover');
+    else onComplete();
+  }, [stage, onComplete]);
 
   /** Sol üstte her aşamada görünen skip butonu */
   const SkipButton = () => (
     <button
       type="button"
-      onClick={onComplete}
+      onClick={handleSkip}
       className="fixed top-4 left-4 z-[101] px-4 py-2 rounded-full text-sm font-medium transition-opacity hover:opacity-90"
       style={{
         backgroundColor: 'rgba(0,0,0,0.4)',
@@ -93,8 +102,9 @@ export function GuestOpeningFlow({ data, onComplete }: GuestOpeningFlowProps) {
   const primary = data.theme?.primaryColor || '#c8a24a';
   const secondary = data.theme?.secondaryColor || '#a12b3a';
 
+  /** Video bittikten sonra bilgi ekranına geç (sonra Zarf, sonra ana davetiye) */
   const handleVideoEnded = useCallback(() => {
-    setStage('cover');
+    setStage('info');
     setVideoStarted(false);
   }, []);
 
@@ -151,7 +161,7 @@ export function GuestOpeningFlow({ data, onComplete }: GuestOpeningFlowProps) {
           </ul>
           <motion.button
             type="button"
-            onClick={() => setStage('video')}
+            onClick={() => setStage('cover')}
             className="mt-10 px-8 py-4 rounded-full font-semibold text-white shadow-lg"
             style={{ backgroundColor: primary }}
             initial={{ opacity: 0, y: 20 }}
@@ -173,33 +183,50 @@ export function GuestOpeningFlow({ data, onComplete }: GuestOpeningFlowProps) {
           exit={{ opacity: 0 }}
         >
           <SkipButton />
-          <video
-            ref={videoRef}
-            src={media.introVideoUrl}
-            className="absolute inset-0 w-full h-full object-cover"
-            playsInline
-            muted={false}
-            onEnded={handleVideoEnded}
-            onClick={() => videoRef.current?.play()}
-          />
-          {!videoStarted && (
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center bg-black/40"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                videoRef.current?.play();
-                setVideoStarted(true);
-              }}
-            >
-              <span
-                className="text-white text-lg font-medium px-6 py-3 rounded-full border-2 border-white/80"
-                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+          {videoLoadError ? (
+            <div className="flex flex-col items-center justify-center gap-6 text-white text-center px-6">
+              <p className="text-lg">{lang === 'tr' ? 'Medya yüklenemedi.' : 'Media could not be loaded.'}</p>
+              <button
+                type="button"
+                onClick={handleVideoEnded}
+                className="px-8 py-4 rounded-full font-semibold text-white"
+                style={{ backgroundColor: primary }}
               >
-                {lang === 'tr' ? 'Başlatmak için dokunun' : 'Tap to start'}
-              </span>
-            </motion.div>
+                {lang === 'tr' ? 'Devam et' : 'Continue'}
+              </button>
+            </div>
+          ) : (
+            <>
+              <video
+                ref={videoRef}
+                src={media.introVideoUrl}
+                className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                muted={false}
+                onEnded={handleVideoEnded}
+                onError={() => setVideoLoadError(true)}
+                onClick={() => videoRef.current?.play()}
+              />
+              {!videoStarted && !videoLoadError && (
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center bg-black/40"
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => {
+                    videoRef.current?.play();
+                    setVideoStarted(true);
+                  }}
+                >
+                  <span
+                    className="text-white text-lg font-medium px-6 py-3 rounded-full border-2 border-white/80"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                  >
+                    {lang === 'tr' ? 'Başlatmak için dokunun' : 'Tap to start'}
+                  </span>
+                </motion.div>
+              )}
+            </>
           )}
         </motion.div>
       )}
@@ -217,9 +244,10 @@ export function GuestOpeningFlow({ data, onComplete }: GuestOpeningFlowProps) {
           <SkipButton />
           <div className="absolute inset-0">
             <img
-              src={media.coverImageUrl}
+              src={coverLoadError ? media.fallbackCoverImageUrl : media.coverImageUrl}
               alt=""
               className="w-full h-full object-cover"
+              onError={() => setCoverLoadError(true)}
             />
             <div
               className="absolute inset-0"

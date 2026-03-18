@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isValidTokenFormat } from '@/lib/token';
 import { getTheme, type ThemeId } from '@/lib/themes';
+import { apiError, ErrorCodes } from '@/lib/api-response';
 
 /** Test için mock davetiye — veritabanı olmadan /invitation/test-guest çalışsın */
 const TEST_GUEST_SLUG = 'test-guest';
@@ -63,15 +64,14 @@ export async function GET(
     const { slug } = await params;
 
     if (!slug) {
-      return NextResponse.json(
-        { error: 'Invitation slug is required' },
-        { status: 400 }
-      );
+      return apiError(ErrorCodes.VALIDATION_ERROR, 400, 'Invitation slug is required');
     }
 
-    // Test slug: veritabanına gitmeden mock davetiye dön (test-guest, test, demo)
+    // Test slug: only in development (avoid real invitation slug collision in production)
+    const allowTestSlugs = process.env.NODE_ENV === 'development' ||
+      process.env.NEXT_PUBLIC_ALLOW_TEST_SLUGS === 'true';
     const testSlugs = [TEST_GUEST_SLUG, 'test', 'demo'];
-    if (testSlugs.includes(slug.toLowerCase())) {
+    if (allowTestSlugs && testSlugs.includes(slug.toLowerCase())) {
       return NextResponse.json(MOCK_INVITATION);
     }
 
@@ -91,35 +91,23 @@ export async function GET(
 
     if (error) {
       console.error('Error fetching invitation:', error);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error.message);
     }
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: 'Invitation not found' },
-        { status: 404 }
-      );
+      return apiError(ErrorCodes.NOT_FOUND, 404, 'Invitation not found');
     }
 
     // Token kontrolü
     if (invitation.require_token) {
       // Token zorunlu ise kontrol et
       if (!token) {
-        return NextResponse.json(
-          { error: 'TOKEN_REQUIRED', message: 'This invitation requires a token to access' },
-          { status: 403 }
-        );
+        return apiError(ErrorCodes.FORBIDDEN, 403, 'This invitation requires a token to access');
       }
 
       // Token formatını kontrol et
       if (!isValidTokenFormat(token)) {
-        return NextResponse.json(
-          { error: 'INVALID_TOKEN_FORMAT' },
-          { status: 400 }
-        );
+        return apiError(ErrorCodes.VALIDATION_ERROR, 400, 'Invalid token format');
       }
 
       // Token'ın geçerli olup olmadığını kontrol et
@@ -140,10 +128,7 @@ export async function GET(
           .maybeSingle();
 
         if (tokenError || !guestToken) {
-          return NextResponse.json(
-            { error: 'INVALID_TOKEN', message: 'Invalid or expired token' },
-            { status: 403 }
-          );
+          return apiError(ErrorCodes.FORBIDDEN, 403, 'Invalid or expired token');
         }
 
         // Token'ı "opened" olarak işaretle (eğer henüz açılmadıysa)
@@ -160,17 +145,11 @@ export async function GET(
 
       // Süre ve kullanım limiti kontrolü (admin tarafından ayarlanmışsa)
       if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
-        return NextResponse.json(
-          { error: 'INVITATION_EXPIRED', message: 'This invitation has expired' },
-          { status: 403 }
-        );
+        return apiError(ErrorCodes.FORBIDDEN, 403, 'This invitation has expired');
       }
 
       if (invitation.max_uses && (invitation.current_uses || 0) >= invitation.max_uses) {
-        return NextResponse.json(
-          { error: 'INVITATION_LIMIT_REACHED', message: 'Maximum usage limit reached' },
-          { status: 403 }
-        );
+        return apiError(ErrorCodes.FORBIDDEN, 403, 'Maximum usage limit reached');
       }
     }
 
@@ -205,9 +184,11 @@ export async function GET(
 
   } catch (error) {
     console.error('Error fetching invitation:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return apiError(
+      ErrorCodes.INTERNAL_SERVER_ERROR,
+      500,
+      undefined,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }
@@ -220,10 +201,7 @@ export async function DELETE(
     const { slug } = await params;
 
     if (!slug) {
-      return NextResponse.json(
-        { error: 'INVALID_SLUG', message: 'Invitation slug is required' },
-        { status: 400 }
-      );
+      return apiError(ErrorCodes.VALIDATION_ERROR, 400, 'Invitation slug is required');
     }
 
     const supabase = await createSupabaseServerClient();
@@ -231,10 +209,7 @@ export async function DELETE(
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'UNAUTHORIZED', message: 'Authentication required' },
-        { status: 401 }
-      );
+      return apiError(ErrorCodes.UNAUTHORIZED, 401, 'Authentication required');
     }
 
     // Find invitation and verify ownership
@@ -246,24 +221,15 @@ export async function DELETE(
 
     if (invError) {
       console.error('Error finding invitation:', invError);
-      return NextResponse.json(
-        { error: 'SERVER_ERROR', details: invError.message },
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, invError.message);
     }
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: 'INVITATION_NOT_FOUND', message: 'Invitation not found' },
-        { status: 404 }
-      );
+      return apiError(ErrorCodes.NOT_FOUND, 404, 'Invitation not found');
     }
 
     if (invitation.owner_id !== user.id) {
-      return NextResponse.json(
-        { error: 'FORBIDDEN', message: 'Only the invitation owner can delete this invitation' },
-        { status: 403 }
-      );
+      return apiError(ErrorCodes.FORBIDDEN, 403, 'Only the invitation owner can delete this invitation');
     }
 
     // Delete invitation (cascade will delete related records)
@@ -274,10 +240,7 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting invitation:', deleteError);
-      return NextResponse.json(
-        { error: 'SERVER_ERROR', details: deleteError.message },
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, deleteError.message);
     }
 
     return NextResponse.json({
@@ -287,9 +250,11 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Error deleting invitation:', error);
-    return NextResponse.json(
-      { error: 'INTERNAL_SERVER_ERROR', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+    return apiError(
+      ErrorCodes.INTERNAL_SERVER_ERROR,
+      500,
+      undefined,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }

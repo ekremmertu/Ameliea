@@ -39,32 +39,32 @@ function getEnv(): z.infer<typeof envSchema> {
     return cachedEnv;
   }
 
-  // During build, if env vars not set, return defaults
-  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+  // During build (or when env vars missing/short), return defaults so build and workers don't throw
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
                       process.env.NEXT_PHASE === 'phase-development-build';
-  
-  if (isBuildTime && (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
-    // Return defaults for build (will fail at runtime if not set)
-      cachedEnv = {
-        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key_min_20_chars_long',
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4173',
-        ADMIN_EMAILS: process.env.ADMIN_EMAILS,
-        NEXT_PUBLIC_ADMIN_EMAILS: process.env.NEXT_PUBLIC_ADMIN_EMAILS,
-        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-        IYZICO_API_KEY: process.env.IYZICO_API_KEY || '',
-        IYZICO_SECRET_KEY: process.env.IYZICO_SECRET_KEY || '',
-        IYZICO_BASE_URL: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com',
-        NODE_ENV: (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test',
-      };
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const keyValid = typeof supabaseKey === 'string' && supabaseKey.length >= 20;
+  const urlValid = typeof supabaseUrl === 'string' && supabaseUrl.length > 0;
+
+  if (isBuildTime || !urlValid || !keyValid) {
+    cachedEnv = {
+      NEXT_PUBLIC_SUPABASE_URL: urlValid ? supabaseUrl! : 'https://placeholder.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: keyValid ? supabaseKey! : 'placeholder_key_min_20_chars_long',
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4173',
+      ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+      NEXT_PUBLIC_ADMIN_EMAILS: process.env.NEXT_PUBLIC_ADMIN_EMAILS,
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+      IYZICO_API_KEY: process.env.IYZICO_API_KEY || '',
+      IYZICO_SECRET_KEY: process.env.IYZICO_SECRET_KEY || '',
+      IYZICO_BASE_URL: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com',
+      NODE_ENV: (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test',
+    };
     return cachedEnv;
   }
 
   // Runtime validation - if env vars missing, use defaults and log warning
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
   if (!supabaseUrl || !supabaseKey) {
     console.warn('⚠️  Environment variables missing. Using defaults. This may cause errors.');
     cachedEnv = {

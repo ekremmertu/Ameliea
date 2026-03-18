@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { apiError, validationError, parseJsonBodyOrError, ErrorCodes } from '@/lib/api-response';
+import { requireAuth, getInvitationBySlug } from '@/lib/api-helpers';
 
 const UpdateInvitationSchema = z.object({
   title: z.string().min(1).max(120).optional(),
@@ -24,41 +26,24 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: userData } = await supabase.auth.getUser();
-
-    if (!userData.user) {
-      return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
-    }
+    const auth = await requireAuth(supabase);
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
     const { slug } = await params;
 
-    const body = await request.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
-    }
+    const parsedBody = await parseJsonBodyOrError(request);
+    if (parsedBody.response) return parsedBody.response;
+    const body = parsedBody.body;
 
     const parsed = UpdateInvitationSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'VALIDATION_ERROR', details: parsed.error.flatten() },
-        { status: 400 }
-      );
+      return validationError(parsed.error);
     }
 
-    // Verify ownership
-    const { data: invitation, error: invError } = await supabase
-      .from('invitations')
-      .select('id, owner_id')
-      .eq('slug', slug)
-      .eq('owner_id', userData.user.id)
-      .single();
-
-    if (invError || !invitation) {
-      return NextResponse.json(
-        { error: 'INVITATION_NOT_FOUND' },
-        { status: 404 }
-      );
-    }
+    const invResult = await getInvitationBySlug<{ id: string; owner_id: string }>(supabase, slug, { requireOwner: true, userId: user.id });
+    if (invResult.response) return invResult.response;
+    const invitation = invResult.invitation!;
 
     // Update invitation
     const updateData: any = {};
@@ -79,19 +64,13 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Error updating invitation:', updateError);
-      return NextResponse.json(
-        { error: 'SERVER_ERROR', details: updateError.message },
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, updateError.message);
     }
 
     return NextResponse.json({ ok: true, invitation: updated }, { status: 200 });
   } catch (error) {
     console.error('Error in update invitation API:', error);
-    return NextResponse.json(
-      { error: 'INTERNAL_SERVER_ERROR', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error instanceof Error ? error.message : 'Unknown error');
   }
 }
 

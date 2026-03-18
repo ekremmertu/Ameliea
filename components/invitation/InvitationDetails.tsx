@@ -5,6 +5,7 @@ import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
 import { I18nKey } from '@/lib/i18n';
 import { ImageSlider } from '@/components/ui/ImageSlider';
+import { env } from '@/lib/env';
 
 interface ScheduleItem {
   time: string;
@@ -134,7 +135,7 @@ export function InvitationDetails({ invitationData }: InvitationDetailsProps) {
                 </motion.a>
                 <div className="w-full h-64 md:h-96 rounded-xl overflow-hidden border-2" style={{ borderColor: invitationData.theme.primaryColor }}>
                   <iframe
-                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&q=${encodeURIComponent(invitationData.venueAddress)}`}
+                    src={`https://www.google.com/maps/embed/v1/place?key=${env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&q=${encodeURIComponent(invitationData.venueAddress)}`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}

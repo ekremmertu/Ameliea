@@ -10,6 +10,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { initializePayment, type PaymentRequest } from '@/lib/iyzico';
 import { env } from '@/lib/env';
 import { getPlanPricing, isValidPlanType, PLAN_TYPES } from '@/lib/constants';
+import { apiError, validationError, parseJsonBodyOrError, ErrorCodes } from '@/lib/api-response';
 
 const InitializePaymentSchema = z.object({
   plan_type: z.enum(['light', 'premium']),
@@ -57,25 +58,18 @@ export async function POST(req: Request) {
 
     if (!userData.user) {
       console.log('[Payment Initialize] Unauthorized - no user');
-      return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+      return apiError(ErrorCodes.UNAUTHORIZED, 401);
     }
     
     console.log('[Payment Initialize] User authenticated:', userData.user.id);
 
-    const body = await req.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
-    }
+    const parsedBody = await parseJsonBodyOrError(req);
+    if (parsedBody.response) return parsedBody.response;
+    const body = parsedBody.body;
 
     const parsed = InitializePaymentSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: 'VALIDATION_ERROR',
-          details: parsed.error.flatten(),
-        },
-        { status: 400 }
-      );
+      return validationError(parsed.error);
     }
 
     // Check if user already has an active purchase
@@ -132,10 +126,7 @@ export async function POST(req: Request) {
 
     if (purchaseError || !purchase) {
       console.error('Error creating pending purchase:', purchaseError);
-      return NextResponse.json(
-        { error: 'SERVER_ERROR', details: purchaseError?.message || 'Failed to create purchase record' },
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, purchaseError?.message || 'Failed to create purchase record');
     }
 
     // Prepare Iyzico payment request
@@ -232,23 +223,11 @@ export async function POST(req: Request) {
     console.error('Payment initialization error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    // Log full error details for debugging
-    console.error('Full error details:', {
-      message: errorMessage,
-      stack: errorStack,
-      error,
-    });
-    
-    return NextResponse.json(
-      {
-        error: 'INTERNAL_SERVER_ERROR',
-        details: errorMessage,
-        // Only include stack in development
-        ...(process.env.NODE_ENV === 'development' && { stack: errorStack }),
-      },
-      { status: 500 }
-    );
+    console.error('Full error details:', { message: errorMessage, stack: errorStack, error });
+    const details: unknown = process.env.NODE_ENV === 'development' && errorStack
+      ? { message: errorMessage, stack: errorStack }
+      : errorMessage;
+    return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, details);
   }
 }
 

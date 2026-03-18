@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { generateToken } from '@/lib/token';
+import { apiError, validationError, parseJsonBodyOrError, ErrorCodes } from '@/lib/api-response';
 
 const CreateInvitationSchema = z.object({
   slug: z.string().min(3).max(64).regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
@@ -29,24 +30,17 @@ export async function POST(req: Request) {
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData.user) {
-    return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    return apiError(ErrorCodes.UNAUTHORIZED, 401);
   }
 
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
-  }
+  const parsedBody = await parseJsonBodyOrError(req);
+  if (parsedBody.response) return parsedBody.response;
+  const body = parsedBody.body;
 
   const parsed = CreateInvitationSchema.safeParse(body);
   if (!parsed.success) {
     console.error('Validation error:', parsed.error.flatten());
-    return NextResponse.json(
-      { 
-        error: 'VALIDATION_ERROR', 
-        details: parsed.error.flatten() 
-      }, 
-      { status: 400 }
-    );
+    return validationError(parsed.error);
   }
 
   // Generate default token if require_token is true
@@ -77,14 +71,10 @@ export async function POST(req: Request) {
 
   if (error) {
     console.error('Database error:', error);
-    // Check for duplicate slug
     if (String(error.message).toLowerCase().includes('duplicate') || String(error.code) === '23505') {
       return NextResponse.json({ error: 'SLUG_TAKEN' }, { status: 409 });
     }
-    return NextResponse.json(
-      { error: 'SERVER_ERROR', details: error.message, code: error.code }, 
-      { status: 500 }
-    );
+    return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error.message);
   }
 
   // Otomatik token oluştur (eğer isteniyorsa)

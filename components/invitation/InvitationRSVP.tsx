@@ -46,6 +46,8 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  /** API validation errors: field name -> list of messages (from VALIDATION_ERROR details.fieldErrors) */
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   // Fetch guest questions
   useEffect(() => {
@@ -69,9 +71,9 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setFieldErrors({});
 
     try {
-      // Submit RSVP first
       const rsvpResponse = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +89,20 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
         }),
       });
 
-      if (!rsvpResponse.ok) throw new Error('Failed to submit RSVP');
+      if (!rsvpResponse.ok) {
+        const data = await rsvpResponse.json().catch(() => ({}));
+        if (data.error === 'VALIDATION_ERROR' && data.details?.fieldErrors && typeof data.details.fieldErrors === 'object') {
+          setFieldErrors(data.details.fieldErrors as Record<string, string[]>);
+          showToast(
+            lang === 'tr' ? 'Lütfen formdaki hataları düzeltin.' : 'Please fix the errors in the form.',
+            'error'
+          );
+          return;
+        }
+        const msg = data.message || data.error || (lang === 'tr' ? 'RSVP gönderilemedi.' : 'Failed to submit RSVP.');
+        showToast(msg, 'error');
+        return;
+      }
 
       const rsvpData = await rsvpResponse.json();
       const rsvpId = rsvpData.rsvp?.id;
@@ -264,13 +279,20 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
               className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
               style={{
                 backgroundColor: 'var(--bg-panel-strong)',
-                borderColor: 'var(--border-base)',
+                borderColor: fieldErrors.full_name ? 'var(--crimson-base)' : 'var(--border-base)',
                 minHeight: '44px',
                 fontSize: '16px',
               }}
               onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = fieldErrors.full_name ? 'var(--crimson-base)' : 'var(--border-base)'; }}
+              aria-invalid={!!fieldErrors.full_name}
+              aria-describedby={fieldErrors.full_name ? 'rsvp-name-error' : undefined}
             />
+            {fieldErrors.full_name?.length ? (
+              <p id="rsvp-name-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
+                {fieldErrors.full_name[0]}
+              </p>
+            ) : null}
           </div>
 
           {/* Email */}
@@ -288,13 +310,20 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
               className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
               style={{
                 backgroundColor: 'var(--bg-panel-strong)',
-                borderColor: 'var(--border-base)',
+                borderColor: fieldErrors.email ? 'var(--crimson-base)' : 'var(--border-base)',
                 minHeight: '44px',
                 fontSize: '16px',
               }}
               onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = fieldErrors.email ? 'var(--crimson-base)' : 'var(--border-base)'; }}
+              aria-invalid={!!fieldErrors.email}
+              aria-describedby={fieldErrors.email ? 'rsvp-email-error' : undefined}
             />
+            {fieldErrors.email?.length ? (
+              <p id="rsvp-email-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
+                {fieldErrors.email[0]}
+              </p>
+            ) : null}
           </div>
 
           {/* Phone */}
@@ -312,14 +341,21 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
               className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
               style={{
                 backgroundColor: 'var(--bg-panel-strong)',
-                borderColor: 'var(--border-base)',
+                borderColor: fieldErrors.phone ? 'var(--crimson-base)' : 'var(--border-base)',
                 minHeight: '44px',
                 fontSize: '16px',
               }}
               onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = fieldErrors.phone ? 'var(--crimson-base)' : 'var(--border-base)'; }}
               placeholder={lang === 'tr' ? '+90 555 123 4567' : '+1 555 123 4567'}
+              aria-invalid={!!fieldErrors.phone}
+              aria-describedby={fieldErrors.phone ? 'rsvp-phone-error' : undefined}
             />
+            {fieldErrors.phone?.length ? (
+              <p id="rsvp-phone-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
+                {fieldErrors.phone[0]}
+              </p>
+            ) : null}
           </div>
 
           {/* Attending */}
@@ -373,13 +409,20 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
                 className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
                 style={{
                   backgroundColor: 'var(--bg-panel-strong)',
-                  borderColor: 'var(--border-base)',
+                  borderColor: fieldErrors.guests_count ? 'var(--crimson-base)' : 'var(--border-base)',
                   minHeight: '44px',
                   fontSize: '16px',
                 }}
+                aria-invalid={!!fieldErrors.guests_count}
+                aria-describedby={fieldErrors.guests_count ? 'rsvp-guests-error' : undefined}
                 onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = fieldErrors.guests_count ? 'var(--crimson-base)' : 'var(--border-base)'; }}
               />
+              {fieldErrors.guests_count?.length ? (
+                <p id="rsvp-guests-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
+                  {fieldErrors.guests_count[0]}
+                </p>
+              ) : null}
             </div>
           )}
 

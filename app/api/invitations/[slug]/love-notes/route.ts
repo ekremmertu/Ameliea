@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeLoveNoteData } from '@/lib/sanitize';
+import { apiError, validationError, parseJsonBodyOrError, ErrorCodes } from '@/lib/api-response';
 
 const CreateLoveNoteSchema = z.object({
   rsvp_id: z.string().uuid(),
@@ -24,20 +25,13 @@ export async function POST(
     const { slug } = await params;
     const supabase = await createSupabaseServerClient();
 
-    const body = await req.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
-    }
+    const parsedBody = await parseJsonBodyOrError(req);
+    if (parsedBody.response) return parsedBody.response;
+    const body = parsedBody.body;
 
     const parsed = CreateLoveNoteSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { 
-          error: 'VALIDATION_ERROR', 
-          details: parsed.error.flatten() 
-        }, 
-        { status: 400 }
-      );
+      return validationError(parsed.error);
     }
 
     // Find invitation by slug
@@ -49,11 +43,11 @@ export async function POST(
 
     if (invError) {
       console.error('Error finding invitation:', invError);
-      return NextResponse.json({ error: 'SERVER_ERROR', details: invError.message }, { status: 500 });
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, invError.message);
     }
 
     if (!invitation || !invitation.is_published) {
-      return NextResponse.json({ error: 'INVITATION_NOT_FOUND' }, { status: 404 });
+      return apiError(ErrorCodes.NOT_FOUND, 404, 'Invitation not found');
     }
 
     // Verify RSVP belongs to this invitation
@@ -90,19 +84,13 @@ export async function POST(
 
     if (insertError) {
       console.error('Error inserting love note:', insertError);
-      return NextResponse.json(
-        { error: 'SERVER_ERROR', details: insertError.message }, 
-        { status: 500 }
-      );
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, insertError.message);
     }
 
     return NextResponse.json({ ok: true, love_note: loveNote }, { status: 201 });
   } catch (error) {
     console.error('Love note API error:', error);
-    return NextResponse.json(
-      { error: 'INTERNAL_SERVER_ERROR', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error instanceof Error ? error.message : 'Unknown error');
   }
 }
 
