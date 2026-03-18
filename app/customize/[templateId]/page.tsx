@@ -10,9 +10,8 @@ import { CountdownTimer } from '@/components/invitation/CountdownTimer';
 import { ScheduleTimeline } from '@/components/invitation/ScheduleTimeline';
 import { FAQ } from '@/components/invitation/FAQ';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
-import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { BackButton } from '@/components/ui/BackButton';
-import { ThemeId, THEMES, getTheme } from '@/lib/themes';
+import { ThemeId, THEMES } from '@/lib/themes';
 import { getThemeIdFromTemplateId } from '@/lib/theme-assets';
 import { getUserPlanType, type PlanType } from '@/lib/purchase';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -74,13 +73,6 @@ interface CustomizationData {
   guestQuestions: GuestQuestionItem[];
   enableGuestQuestions: boolean;
 }
-
-const COLOR_PRESETS = [
-  { name: 'Gold & Crimson', primary: '#c8a24a', secondary: '#a12b3a' },
-  { name: 'Rose & Ivory', primary: '#f3d7da', secondary: '#fbf7ef' },
-  { name: 'Navy & Gold', primary: '#1b1620', secondary: '#c8a24a' },
-  { name: 'Blush & Sage', primary: '#e8c4c8', secondary: '#9caf88' },
-];
 
 // Parse time string (HH:MM) to minutes for sorting
 function parseTimeToMinutes(time: string): number {
@@ -697,31 +689,6 @@ export default function CustomizePage() {
                 </div>
               )}
 
-            </section>
-
-            {/* Theme Customization */}
-            <section className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-panel-strong)' }}>
-              <h2 className="text-2xl font-semibold mb-6" style={{ color: tokens.colors.text.primary }}>
-                {lang === 'tr' ? 'Tema Seçimi' : 'Theme Selection'}
-              </h2>
-              
-              <ThemeSelector
-                selectedThemeId={formData.themeId}
-                onThemeSelect={(themeId) => {
-                  const selectedTheme = getTheme(themeId);
-                  setFormData({
-                    ...formData,
-                    themeId,
-                    theme: {
-                      primaryColor: selectedTheme.colors.primary,
-                      secondaryColor: selectedTheme.colors.secondary,
-                      fontFamily: selectedTheme.fonts.heading as 'serif' | 'sans',
-                    },
-                  });
-                }}
-                lang={lang}
-                showPreview={true}
-              />
             </section>
 
             {/* Personal Message */}

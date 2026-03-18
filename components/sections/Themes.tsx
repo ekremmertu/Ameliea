@@ -186,7 +186,7 @@ export function Themes() {
                   onClick={() => openPreview(theme)}
                   aria-label={t('view_preview')}
                 >
-                  <ThemeImage src={theme.zarfUrl} alt={t(theme.titleKey as I18nKey)} />
+                  <ThemeImage src={theme.imageUrl} alt={t(theme.titleKey as I18nKey)} />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
                     <span className="opacity-0 hover:opacity-100 transition-opacity rounded-full bg-white/90 text-[#1b1620] px-4 py-2 text-sm font-medium flex items-center gap-2">
                       <span aria-hidden>▶</span> {t('view_preview')}

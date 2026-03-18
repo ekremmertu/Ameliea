@@ -40,6 +40,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Tema video dosyaları — Supabase Storage'da tutulur (scripts/upload-theme-videos.js ile yüklenir)
+public/temalar/**/Video.mp4
+
+# macOS sistem dosyaları
+public/**/.DS_Store
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
