@@ -43,6 +43,17 @@ export function getIyzicoClient() {
   });
 }
 
+/** Iyzico callback result shape (SDK returns unknown-shaped object) */
+interface IyzicoResult {
+  status?: string;
+  paymentId?: string;
+  conversationId?: string;
+  threeDSHtmlContent?: string;
+  paymentStatus?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
 export interface PaymentRequest {
   price: number; // Amount in TRY (e.g., 1999.00 for ₺1,999)
   paidPrice: number; // Same as price for single payment
@@ -147,19 +158,19 @@ export async function initializePayment(
           });
           return;
         }
-
-        if (result.status === 'success') {
+        const r = result as IyzicoResult;
+        if (r.status === 'success') {
           resolve({
             status: 'success',
-            paymentId: result.paymentId,
-            conversationId: result.conversationId,
-            htmlContent: result.threeDSHtmlContent, // 3D Secure HTML
+            paymentId: r.paymentId,
+            conversationId: r.conversationId,
+            htmlContent: r.threeDSHtmlContent,
           });
         } else {
           resolve({
             status: 'failure',
-            errorCode: result.errorCode,
-            errorMessage: result.errorMessage,
+            errorCode: r.errorCode,
+            errorMessage: r.errorMessage,
           });
         }
       });
@@ -195,19 +206,19 @@ export async function checkPaymentStatus(paymentId: string): Promise<PaymentResp
             });
             return;
           }
-
-          if (result.status === 'success') {
+          const r = result as IyzicoResult;
+          if (r.status === 'success') {
             resolve({
               status: 'success',
-              paymentId: result.paymentId,
-              paymentStatus: result.paymentStatus, // SUCCESS, FAILURE, INIT_THREEDS, CALLBACK_URL_CALLED
-              conversationId: result.conversationId,
+              paymentId: r.paymentId,
+              paymentStatus: r.paymentStatus,
+              conversationId: r.conversationId,
             });
           } else {
             resolve({
               status: 'failure',
-              errorCode: result.errorCode,
-              errorMessage: result.errorMessage,
+              errorCode: r.errorCode,
+              errorMessage: r.errorMessage,
             });
           }
         }
@@ -252,19 +263,19 @@ export async function handlePaymentCallback(
             });
             return;
           }
-
-          if (result.status === 'success') {
+          const r = result as IyzicoResult;
+          if (r.status === 'success') {
             resolve({
               status: 'success',
-              paymentId: result.paymentId,
-              paymentStatus: result.paymentStatus,
-              conversationId: result.conversationId,
+              paymentId: r.paymentId,
+              paymentStatus: r.paymentStatus,
+              conversationId: r.conversationId,
             });
           } else {
             resolve({
               status: 'failure',
-              errorCode: result.errorCode,
-              errorMessage: result.errorMessage,
+              errorCode: r.errorCode,
+              errorMessage: r.errorMessage,
             });
           }
         }

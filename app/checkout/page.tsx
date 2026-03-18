@@ -12,7 +12,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { showToast } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
 import { hasActivePurchase } from '@/lib/purchase';
-import { PaymentForm } from '@/components/payment/PaymentForm';
+import { PaymentForm, type PaymentFormData } from '@/components/payment/PaymentForm';
 
 type PlanType = 'light' | 'premium';
 
@@ -71,7 +71,7 @@ export default function CheckoutPage() {
   const supabase = createSupabaseBrowserClient();
   
   const [plan, setPlan] = useState<PlanType>('premium');
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string; user_metadata?: { name?: string } } | null>(null);
   const [hasPurchase, setHasPurchase] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
     setShowPaymentForm(true);
   };
 
-  const handlePaymentSubmit = async (formData: Record<string, unknown>) => {
+  const handlePaymentSubmit = async (formData: PaymentFormData) => {
     setProcessing(true);
 
     try {
@@ -122,7 +122,7 @@ export default function CheckoutPage() {
           plan_type: plan,
           paymentCard: {
             cardHolderName: formData.cardHolderName,
-            cardNumber: formData.cardNumber.replace(/\s/g, ''), // Remove spaces
+            cardNumber: String(formData.cardNumber).replace(/\s/g, ''), // Remove spaces
             expireMonth: formData.expireMonth,
             expireYear: formData.expireYear,
             cvc: formData.cvc,
@@ -300,8 +300,8 @@ export default function CheckoutPage() {
           {/* Payment Form or Start Payment Button */}
           {showPaymentForm && user && !hasPurchase ? (
             <PaymentForm
-              userEmail={user.email}
-              userName={user.user_metadata?.name || user.email.split('@')[0]}
+              userEmail={user.email ?? ''}
+              userName={user.user_metadata?.name ?? (user.email ? user.email.split('@')[0] : undefined)}
               onSubmit={handlePaymentSubmit}
               isSubmitting={processing}
             />

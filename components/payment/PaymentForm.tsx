@@ -5,7 +5,7 @@ import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
 import { Button } from '@/components/ui/Button';
 
-interface PaymentFormData {
+export interface PaymentFormData {
   cardHolderName: string;
   cardNumber: string;
   expireMonth: string;
