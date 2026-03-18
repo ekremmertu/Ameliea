@@ -89,10 +89,8 @@ export function VideoShowcase({ videoUrl }: VideoShowcaseProps) {
                       loop
                       muted
                       playsInline
-                      controls
                     >
                       <source src={videoUrl} type="video/mp4" />
-                      <source src={videoUrl} type="video/webm" />
                       {lang === 'tr' 
                         ? 'Tarayıcınız video oynatmayı desteklemiyor.'
                         : 'Your browser does not support video playback.'}

@@ -243,19 +243,83 @@ export function IntroAnimation({ onComplete }: IntroAnimationProps) {
                           strokeWidth="2"
                           strokeLinecap="round"
                         />
-                        {/* Gelin saçı (çok daha zarif, detaylı) */}
+                        {/* Gelin saçı - uzun sarı, aşağı dökülen kitle */}
                         <path
-                          d="M 94 285 Q 127 250, 160 285 Q 127 260, 94 285"
-                          fill="var(--ink-base)"
-                          opacity="0.8"
+                          d="M 96 265 Q 84 305, 80 365 Q 76 425, 78 492 L 92 492 Q 89 428, 92 370 Q 96 310, 105 272 Z"
+                          fill="#C8963E"
+                          opacity="0.92"
                         />
-                        {/* Gelin saç detayları */}
+                        {/* Sağ taraf uzun saç */}
                         <path
-                          d="M 100 270 Q 127 255, 154 270"
+                          d="M 155 268 Q 164 298, 166 345 L 158 345 Q 157 300, 150 273 Z"
+                          fill="#C8963E"
+                          opacity="0.85"
+                        />
+                        {/* Üst saç - kafa üstü */}
+                        <path
+                          d="M 100 252 Q 127 241, 155 252 Q 162 262, 157 271 Q 127 261, 97 271 Q 93 262, 100 252 Z"
+                          fill="#D4A843"
+                          opacity="0.95"
+                        />
+                        {/* Saç parıltısı */}
+                        <path
+                          d="M 109 250 Q 127 244, 148 250"
                           fill="none"
-                          stroke="var(--gold-base)"
+                          stroke="#F0D060"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          opacity="0.65"
+                        />
+                        {/* Rüzgarda savrulan saç teli 1 */}
+                        <motion.path
+                          d="M 96 267 Q 68 254, 40 258 Q 22 261, 8 255"
+                          fill="none"
+                          stroke="#E8C547"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          opacity="0.9"
+                          animate={{
+                            d: [
+                              "M 96 267 Q 68 254, 40 258 Q 22 261, 8 255",
+                              "M 96 267 Q 66 249, 38 253 Q 20 257, 6 250",
+                              "M 96 267 Q 68 254, 40 258 Q 22 261, 8 255",
+                            ],
+                          }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                        {/* Rüzgarda savrulan saç teli 2 */}
+                        <motion.path
+                          d="M 95 278 Q 65 265, 37 269 Q 19 273, 5 267"
+                          fill="none"
+                          stroke="#D4A843"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          opacity="0.8"
+                          animate={{
+                            d: [
+                              "M 95 278 Q 65 265, 37 269 Q 19 273, 5 267",
+                              "M 95 278 Q 62 260, 34 265 Q 16 268, 2 262",
+                              "M 95 278 Q 65 265, 37 269 Q 19 273, 5 267",
+                            ],
+                          }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.35 }}
+                        />
+                        {/* Rüzgarda savrulan saç teli 3 */}
+                        <motion.path
+                          d="M 93 291 Q 63 280, 35 284 Q 17 287, 4 281"
+                          fill="none"
+                          stroke="#C8963E"
                           strokeWidth="2"
-                          opacity="0.3"
+                          strokeLinecap="round"
+                          opacity="0.7"
+                          animate={{
+                            d: [
+                              "M 93 291 Q 63 280, 35 284 Q 17 287, 4 281",
+                              "M 93 291 Q 60 275, 32 279 Q 14 283, 1 276",
+                              "M 93 291 Q 63 280, 35 284 Q 17 287, 4 281",
+                            ],
+                          }}
+                          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
                         />
                         {/* Gelin tülü (daha belirgin) */}
                         <path

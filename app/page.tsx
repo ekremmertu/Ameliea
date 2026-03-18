@@ -19,6 +19,7 @@ import { Features } from '@/components/sections/Features';
 import { VideoShowcase } from '@/components/sections/VideoShowcase';
 import { Themes } from '@/components/sections/Themes';
 import { tokens } from '@/lib/design-tokens';
+import { getThemeAssetsByStyleKey } from '@/lib/theme-assets';
 import { useI18n } from '@/components/providers/I18nProvider';
 import { Button } from '@/components/ui/Button';
 
@@ -116,7 +117,7 @@ export default function Home() {
             </div>
             <Journey />
             <Themes />
-            <VideoShowcase />
+            <VideoShowcase videoUrl={getThemeAssetsByStyleKey('style_2')?.videoUrl} />
             <Features />
             <DashboardPreview />
             <Pricing />
