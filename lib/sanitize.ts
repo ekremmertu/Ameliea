@@ -127,11 +127,11 @@ export function sanitizeUserContent(content: string): string {
 /**
  * Sanitize object by applying appropriate sanitization to each field
  */
-export function sanitizeObject<T extends Record<string, any>>(
+export function sanitizeObject<T extends Record<string, unknown>>(
   obj: T,
   schema: Record<keyof T, 'text' | 'html' | 'email' | 'phone' | 'url' | 'none'>
 ): T {
-  const sanitized = { ...obj };
+  const sanitized = { ...obj } as T;
   
   for (const key in schema) {
     const value = obj[key];
@@ -141,19 +141,19 @@ export function sanitizeObject<T extends Record<string, any>>(
     
     switch (type) {
       case 'text':
-        sanitized[key] = sanitizeText(String(value)) as any;
+        (sanitized as Record<string, unknown>)[key] = sanitizeText(String(value));
         break;
       case 'html':
-        sanitized[key] = sanitizeHtml(String(value)) as any;
+        (sanitized as Record<string, unknown>)[key] = sanitizeHtml(String(value));
         break;
       case 'email':
-        sanitized[key] = sanitizeEmail(String(value)) as any;
+        (sanitized as Record<string, unknown>)[key] = sanitizeEmail(String(value));
         break;
       case 'phone':
-        sanitized[key] = sanitizePhone(String(value)) as any;
+        (sanitized as Record<string, unknown>)[key] = sanitizePhone(String(value));
         break;
       case 'url':
-        sanitized[key] = sanitizeUrl(String(value)) as any;
+        (sanitized as Record<string, unknown>)[key] = sanitizeUrl(String(value));
         break;
       case 'none':
         // No sanitization
@@ -172,7 +172,7 @@ export function sanitizeRsvpData(data: {
   email?: string;
   phone?: string;
   note?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   return {
     ...data,
@@ -190,7 +190,7 @@ export function sanitizeLoveNoteData(data: {
   guest_name: string;
   guest_email?: string;
   message: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   return {
     ...data,
@@ -206,7 +206,7 @@ export function sanitizeLoveNoteData(data: {
 export function sanitizeTestimonialData(data: {
   name: string;
   message: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   return {
     ...data,

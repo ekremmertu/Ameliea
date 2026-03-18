@@ -15,7 +15,7 @@ export interface NotificationPayload {
   to: string; // email, phone number, or WhatsApp number
   subject?: string; // For email
   message: string;
-  data?: Record<string, any>; // Additional data for templates
+  data?: Record<string, unknown>; // Additional data for templates
 }
 
 export interface NotificationResult {
@@ -32,7 +32,7 @@ async function sendEmail(
   to: string,
   subject: string,
   message: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<NotificationResult> {
   try {
     // For now, just log the email
@@ -80,7 +80,7 @@ async function sendEmail(
 async function sendSMS(
   to: string,
   message: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<NotificationResult> {
   try {
     // For now, just log the SMS
@@ -123,7 +123,7 @@ async function sendSMS(
 async function sendWhatsApp(
   to: string,
   message: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<NotificationResult> {
   try {
     // For now, just log the WhatsApp message

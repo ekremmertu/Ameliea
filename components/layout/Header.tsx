@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/components/providers/I18nProvider';
@@ -13,7 +14,7 @@ export function Header() {
   const { t, lang, setLang } = useI18n();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [hasPurchase, setHasPurchase] = useState(false);
   const supabase = createSupabaseBrowserClient();
 
@@ -75,7 +76,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md border-b" style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}>
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a 
+        <Link 
           href="/" 
           onClick={handleLogoClick}
           className="flex items-center gap-2 cursor-pointer" 
@@ -85,7 +86,7 @@ export function Header() {
           <span className="font-semibold text-lg" style={{ fontFamily: tokens.typography.fontFamily.brand.join(', '), fontSize: '33px' }}>
             {t('brand_name')}
           </span>
-        </a>
+        </Link>
 
         <nav className="hidden md:flex gap-2">
           <button 

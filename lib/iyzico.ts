@@ -6,6 +6,7 @@
 import { env } from './env';
 
 // Dynamic import for CommonJS module (server-side only)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- iyzipay is CommonJS, typed via types/iyzipay.d.ts
 let Iyzipay: any;
 
 // Initialize Iyzico client (server-side only)
@@ -136,13 +137,13 @@ export async function initializePayment(
 
     const client = getIyzicoClient();
     return new Promise((resolve, reject) => {
-      client.threedsInitialize.create(paymentRequest, (err: any, result: any) => {
+      client.threedsInitialize.create(paymentRequest, (err: (Error & { errorCode?: string; errorMessage?: string }) | null, result: Record<string, unknown>) => {
         if (err) {
           console.error('Iyzico payment initialization error:', err);
           resolve({
             status: 'failure',
-            errorCode: err.errorCode || 'UNKNOWN_ERROR',
-            errorMessage: err.errorMessage || 'Payment initialization failed',
+            errorCode: err.errorCode ?? 'UNKNOWN_ERROR',
+            errorMessage: err.errorMessage ?? 'Payment initialization failed',
           });
           return;
         }
@@ -184,13 +185,13 @@ export async function checkPaymentStatus(paymentId: string): Promise<PaymentResp
         {
           paymentId: paymentId,
         },
-        (err: any, result: any) => {
+        (err: (Error & { errorCode?: string; errorMessage?: string }) | null, result: Record<string, unknown>) => {
           if (err) {
             console.error('Iyzico payment status check error:', err);
             resolve({
               status: 'failure',
-              errorCode: err.errorCode || 'UNKNOWN_ERROR',
-              errorMessage: err.errorMessage || 'Payment status check failed',
+              errorCode: err.errorCode ?? 'UNKNOWN_ERROR',
+              errorMessage: err.errorMessage ?? 'Payment status check failed',
             });
             return;
           }
@@ -241,13 +242,13 @@ export async function handlePaymentCallback(
           paymentId: request.paymentId,
           conversationData: request.conversationData,
         },
-        (err: any, result: any) => {
+        (err: (Error & { errorCode?: string; errorMessage?: string }) | null, result: Record<string, unknown>) => {
           if (err) {
             console.error('Iyzico payment callback error:', err);
             resolve({
               status: 'failure',
-              errorCode: err.errorCode || 'UNKNOWN_ERROR',
-              errorMessage: err.errorMessage || 'Payment callback failed',
+              errorCode: err.errorCode ?? 'UNKNOWN_ERROR',
+              errorMessage: err.errorMessage ?? 'Payment callback failed',
             });
             return;
           }

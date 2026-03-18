@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -138,13 +139,13 @@ export default function InvitationPage() {
           <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             {lang === 'tr' ? 'Test için:' : 'For testing:'}
           </p>
-          <a
+          <Link
             href="/invitation/test-guest"
             className="inline-block px-6 py-3 rounded-full font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--crimson-base)' }}
           >
             /invitation/test-guest
-          </a>
+          </Link>
         </div>
       </div>
     );

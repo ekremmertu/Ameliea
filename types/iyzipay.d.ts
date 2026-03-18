@@ -82,7 +82,7 @@ declare module 'iyzipay' {
     threeDSHtmlContent?: string;
   }
 
-  type IyzicoCallback = (err: any, result: IyzicoResponse) => void;
+  type IyzicoCallback = (err: Error | null, result: IyzicoResponse) => void;
 
   class Iyzipay {
     constructor(config: IyzicoConfig);

@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const { lang } = useI18n();
   const supabase = createSupabaseBrowserClient();
   
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

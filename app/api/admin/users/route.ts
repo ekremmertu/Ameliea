@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
     
     // Get users with their invitation counts
-    let query = supabase
+    const query = supabase
       .from('invitations')
       .select('owner_id, created_at', { count: 'exact' });
     

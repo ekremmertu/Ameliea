@@ -533,7 +533,7 @@ export function RegisterForm() {
                     <strong>5. Fikri Mülkiyet</strong>
                   </p>
                   <p>
-                    Platform içeriği ve yazılımı Corvus Dijital Davetiye'ye aittir. İzinsiz kullanım yasaktır.
+                    Platform içeriği ve yazılımı Corvus Dijital Davetiye&apos;ye aittir. İzinsiz kullanım yasaktır.
                   </p>
                   <p>
                     <strong>6. Sorumluluk Sınırlaması</strong>

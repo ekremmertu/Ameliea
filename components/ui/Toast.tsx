@@ -92,13 +92,13 @@ export function ToastContainer() {
 
   useEffect(() => {
     // Global toast function
-    (window as any).showToast = (message: string, type: ToastType = 'info', duration?: number) => {
+    (window as Window & { showToast?: (message: string, type: ToastType, duration?: number) => void }).showToast = (message: string, type: ToastType = 'info', duration?: number) => {
       const id = Math.random().toString(36).substring(7);
       setToasts((prev) => [...prev, { id, message, type, duration }]);
     };
 
     return () => {
-      delete (window as any).showToast;
+      delete (window as Window & { showToast?: unknown }).showToast;
     };
   }, []);
 
@@ -124,8 +124,9 @@ export function ToastContainer() {
 
 // Helper function for easy toast usage
 export function showToast(message: string, type: ToastType = 'info', duration?: number): void {
-  if (typeof window !== 'undefined' && (window as any).showToast) {
-    (window as any).showToast(message, type, duration);
+  const win = typeof window !== 'undefined' ? (window as Window & { showToast?: (msg: string, t: ToastType, d?: number) => void }) : null;
+  if (win?.showToast) {
+    win.showToast(message, type, duration);
   } else {
     // Fallback to alert if toast system not ready
     alert(message);

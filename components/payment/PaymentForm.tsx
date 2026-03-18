@@ -88,7 +88,7 @@ export function PaymentForm({ userEmail, userName, onSubmit, isSubmitting }: Pay
           return {
             ...prev,
             [field]: {
-              ...(fieldValue as Record<string, any>),
+              ...(fieldValue as Record<string, unknown>),
               [nested]: value,
             },
           };

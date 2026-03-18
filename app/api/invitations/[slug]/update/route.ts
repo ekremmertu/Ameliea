@@ -46,7 +46,7 @@ export async function PATCH(
     const invitation = invResult.invitation!;
 
     // Update invitation
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (parsed.data.title !== undefined) updateData.title = parsed.data.title;
     if (parsed.data.host_names !== undefined) updateData.host_names = parsed.data.host_names;
     if (parsed.data.date_iso !== undefined) updateData.date_iso = parsed.data.date_iso;

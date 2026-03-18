@@ -13,7 +13,7 @@ export function Pricing() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const [selectedPlan, setSelectedPlan] = useState<'light' | 'premium'>('premium');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
   const [checkingUser, setCheckingUser] = useState(true);
 
   useEffect(() => {

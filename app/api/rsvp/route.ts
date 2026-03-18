@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     });
 
     // Insert RSVP - selected_events may not exist in DB yet, so we'll try without it first if it fails
-    const insertData: any = {
+    const insertData: Record<string, unknown> = {
       invitation_id: inv.id,
       full_name: sanitizedData.full_name,
       email: sanitizedData.email || null,

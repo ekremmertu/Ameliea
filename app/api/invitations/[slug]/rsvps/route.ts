@@ -69,7 +69,7 @@ export async function GET(
 
     // Return formatted response
     return NextResponse.json({
-      responses: (rsvps || []).map((rsvp: any) => ({
+      responses: (rsvps || []).map((rsvp: { id: string; full_name: string; email?: string; phone?: string; attendance: string; guests_count: number; note?: string; created_at: string }) => ({
         id: rsvp.id,
         name: rsvp.full_name,
         email: rsvp.email,

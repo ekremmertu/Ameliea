@@ -71,7 +71,7 @@ export default function CheckoutPage() {
   const supabase = createSupabaseBrowserClient();
   
   const [plan, setPlan] = useState<PlanType>('premium');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
   const [hasPurchase, setHasPurchase] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
     setShowPaymentForm(true);
   };
 
-  const handlePaymentSubmit = async (formData: any) => {
+  const handlePaymentSubmit = async (formData: Record<string, unknown>) => {
     setProcessing(true);
 
     try {
