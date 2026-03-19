@@ -888,66 +888,46 @@ export default function CustomizePage() {
               
               <div className="space-y-4">
                 {formData.scheduleItems.map((item, index) => (
-                  <div key={index} className="p-4 rounded-xl border space-y-3" style={{ borderColor: 'var(--border-base)', backgroundColor: 'var(--bg-panel)' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
-                        {lang === 'tr' ? `Program ${index + 1}` : `Event ${index + 1}`}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newItems = formData.scheduleItems.filter((_, i) => i !== index);
-                          setFormData({ ...formData, scheduleItems: newItems });
-                        }}
-                        className="px-3 py-1 rounded-lg text-sm transition-all"
-                        style={{
-                          backgroundColor: 'var(--bg-panel-strong)',
-                          color: tokens.colors.text.secondary,
-                        }}
-                      >
-                        {lang === 'tr' ? 'Sil' : 'Delete'}
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-3 items-center">
-                      <input
-                        type="time"
-                        value={item.time}
-                        onChange={(e) => {
-                          const newItems = [...formData.scheduleItems];
-                          newItems[index].time = e.target.value;
-                          setFormData({ ...formData, scheduleItems: newItems });
-                        }}
-                        onBlur={() => {
+                  <div key={index} className="flex gap-3 items-start flex-wrap md:flex-nowrap">
+                    <input
+                      type="time"
+                      value={item.time}
+                      onChange={(e) => {
+                        const newItems = [...formData.scheduleItems];
+                        newItems[index].time = e.target.value;
+                        setFormData({ ...formData, scheduleItems: newItems });
+                      }}
+                      onBlur={() => {
+                        const sortedItems = sortScheduleItemsByTime(formData.scheduleItems);
+                        setFormData({ ...formData, scheduleItems: sortedItems });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
                           const sortedItems = sortScheduleItemsByTime(formData.scheduleItems);
                           setFormData({ ...formData, scheduleItems: sortedItems });
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const sortedItems = sortScheduleItemsByTime(formData.scheduleItems);
-                            setFormData({ ...formData, scheduleItems: sortedItems });
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        className="px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
-                        style={{
-                          backgroundColor: 'var(--bg-panel-strong)',
-                          borderColor: 'var(--border-base)',
-                          minHeight: '44px',
-                          fontSize: '16px',
-                          width: '120px',
-                        }}
-                      />
-                      <EmojiPicker
-                        currentEmoji={item.icon || getEventIcon(item.event)}
-                        onSelect={(emoji) => {
-                          const newItems = [...formData.scheduleItems];
-                          newItems[index].icon = emoji;
-                          setFormData({ ...formData, scheduleItems: newItems });
-                        }}
-                        themeColor={formData.theme.primaryColor}
-                      />
-                    </div>
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
+                      className="px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
+                      style={{
+                        backgroundColor: 'var(--bg-panel)',
+                        borderColor: 'var(--border-base)',
+                        minHeight: '44px',
+                        fontSize: '16px',
+                        width: '120px',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <EmojiPicker
+                      currentEmoji={item.icon || getEventIcon(item.event)}
+                      onSelect={(emoji) => {
+                        const newItems = [...formData.scheduleItems];
+                        newItems[index].icon = emoji;
+                        setFormData({ ...formData, scheduleItems: newItems });
+                      }}
+                      themeColor={formData.theme.primaryColor}
+                    />
                     <input
                       type="text"
                       value={item.event}
@@ -956,12 +936,13 @@ export default function CustomizePage() {
                         newItems[index].event = e.target.value;
                         setFormData({ ...formData, scheduleItems: newItems });
                       }}
-                      className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
+                      className="flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
                       style={{
-                        backgroundColor: 'var(--bg-panel-strong)',
+                        backgroundColor: 'var(--bg-panel)',
                         borderColor: 'var(--border-base)',
                         minHeight: '44px',
                         fontSize: '16px',
+                        minWidth: '100px',
                       }}
                       placeholder={lang === 'tr' ? 'Etkinlik adı' : 'Event name'}
                     />
@@ -973,15 +954,31 @@ export default function CustomizePage() {
                         newItems[index].description = e.target.value;
                         setFormData({ ...formData, scheduleItems: newItems });
                       }}
-                      className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
+                      className="flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
                       style={{
-                        backgroundColor: 'var(--bg-panel-strong)',
+                        backgroundColor: 'var(--bg-panel)',
                         borderColor: 'var(--border-base)',
                         minHeight: '44px',
                         fontSize: '16px',
+                        minWidth: '100px',
                       }}
                       placeholder={lang === 'tr' ? 'Açıklama' : 'Description'}
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newItems = formData.scheduleItems.filter((_, i) => i !== index);
+                        setFormData({ ...formData, scheduleItems: newItems });
+                      }}
+                      className="px-4 py-3 rounded-xl border transition-all min-h-[44px] flex-shrink-0"
+                      style={{
+                        backgroundColor: 'var(--bg-panel)',
+                        borderColor: 'var(--border-base)',
+                        color: tokens.colors.text.secondary,
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
                 <button
