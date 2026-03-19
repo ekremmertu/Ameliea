@@ -83,6 +83,9 @@ export function InvitationTestimonials({ invitationSlug, themeColor, canDelete =
     }
   };
 
+  if (loading) return null;
+  if (testimonials.length === 0 && !canDelete) return null;
+
   return (
     <section className="py-20 px-4">
       <div className="max-w-4xl mx-auto">
@@ -105,94 +108,9 @@ export function InvitationTestimonials({ invitationSlug, themeColor, canDelete =
           <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
             {lang === 'tr' ? 'Sizden gelen mesajlar' : 'Messages from you'}
           </p>
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-6 py-3 rounded-full transition-all"
-              style={{
-                backgroundColor: themeColor,
-                color: 'white',
-              }}
-            >
-              {lang === 'tr' ? '+ Not Yaz' : '+ Write Note'}
-            </button>
-          )}
         </motion.div>
 
-        {showForm && (
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            onSubmit={handleSubmit}
-            className="mb-12 p-6 rounded-xl"
-            style={{ backgroundColor: 'var(--bg-panel-strong)' }}
-          >
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={lang === 'tr' ? 'Adınız' : 'Your Name'}
-                className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
-                style={{
-                  backgroundColor: 'var(--bg-panel)',
-                  borderColor: 'var(--border-base)',
-                  minHeight: '44px',
-                  fontSize: '16px',
-                }}
-                required
-              />
-              <textarea
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                placeholder={lang === 'tr' ? 'Mesajınız...' : 'Your message...'}
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors resize-none text-base"
-                style={{
-                  backgroundColor: 'var(--bg-panel)',
-                  borderColor: 'var(--border-base)',
-                  minHeight: '100px',
-                  fontSize: '16px',
-                }}
-                required
-              />
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 px-6 py-3 rounded-full transition-all min-h-[44px]"
-                  style={{
-                    backgroundColor: submitting ? 'var(--text-muted)' : themeColor,
-                    color: 'white',
-                  }}
-                >
-                  {submitting ? (lang === 'tr' ? 'Gönderiliyor...' : 'Submitting...') : (lang === 'tr' ? 'Gönder' : 'Submit')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setFormData({ name: '', message: '' });
-                  }}
-                  className="px-6 py-3 rounded-full border transition-all min-h-[44px]"
-                  style={{
-                    backgroundColor: 'var(--bg-panel)',
-                    borderColor: 'var(--border-base)',
-                    color: tokens.colors.text.primary,
-                  }}
-                >
-                  {lang === 'tr' ? 'İptal' : 'Cancel'}
-                </button>
-              </div>
-            </div>
-          </motion.form>
-        )}
-
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: themeColor }}></div>
-          </div>
-        ) : testimonials.length === 0 ? (
+        {testimonials.length === 0 ? (
           <div className="text-center py-12" style={{ color: tokens.colors.text.muted }}>
             {lang === 'tr' ? 'Henüz mesaj yok' : 'No messages yet'}
           </div>

@@ -57,23 +57,9 @@ export default function Home() {
   const { lang } = useI18n();
 
   useEffect(() => {
-    // Check if this is a hard refresh (reload) or a normal navigation
-    const navigationType = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    const isHardRefresh = navigationType?.type === 'reload';
-    
-    // If hard refresh, always show intro (clear sessionStorage)
-    if (isHardRefresh) {
-      sessionStorage.removeItem(INTRO_SEEN_KEY);
-      setShowIntro(true);
-      return;
-    }
-    
-    // For normal navigation, check if intro was already seen in this session
-    const introSeen = sessionStorage.getItem(INTRO_SEEN_KEY);
-    if (!introSeen) {
-      // First visit in this session - show intro
-      setShowIntro(true);
-    }
+    // Landing animasyonu şimdilik devre dışı
+    setShowIntro(false);
+    sessionStorage.setItem(INTRO_SEEN_KEY, 'true');
   }, []);
 
   // Handle hash navigation (scroll to section when hash is present in URL)

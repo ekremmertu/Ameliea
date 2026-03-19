@@ -165,6 +165,11 @@ export async function GET(
     ) as ThemeId;
     const themeConfig = getTheme(themeId);
 
+    // Extract custom data from theme_config (stored during creation)
+    const customData = (invitation.theme_config && typeof invitation.theme_config === 'object')
+      ? invitation.theme_config as Record<string, unknown>
+      : {};
+
     // Return formatted response (compatible with existing frontend)
     return NextResponse.json({
       id: invitation.id,
@@ -173,10 +178,23 @@ export async function GET(
       title: invitation.title,
       host_names: invitation.host_names,
       weddingDate: invitation.date_iso,
-      venueName: invitation.location,
-      venueAddress: invitation.location,
+      venueName: (customData.venueName as string) || invitation.location,
+      venueAddress: (customData.venueAddress as string) || invitation.location,
+      venueMapUrl: (customData.venueMapUrl as string) || undefined,
+      venuePhotos: (customData.venuePhotos as string[]) || [],
+      personalMessage: (customData.personalMessage as string) || undefined,
+      musicUrl: (customData.musicUrl as string) || undefined,
+      videoUrl: (customData.videoUrl as string) || undefined,
+      contactPhone: (customData.contactPhone as string) || undefined,
+      contactEmail: (customData.contactEmail as string) || undefined,
+      contactWhatsApp: (customData.contactWhatsApp as string) || undefined,
+      scheduleItems: (customData.scheduleItems as Array<Record<string, string>>) || undefined,
+      features: (customData.features as Record<string, boolean>) || undefined,
+      dressCode: (customData.dressCode as string) || undefined,
+      faqs: (customData.faqs as Array<Record<string, string>>) || undefined,
+      enableFAQs: (customData.enableFAQs as boolean) || false,
       theme_id: themeId,
-      theme: {
+      theme: (customData.themeColors as Record<string, string>) || {
         primaryColor: themeConfig.colors.primary,
         secondaryColor: themeConfig.colors.secondary,
         fontFamily: themeConfig.fonts.heading,

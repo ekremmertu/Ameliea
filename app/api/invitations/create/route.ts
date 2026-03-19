@@ -22,7 +22,48 @@ const CreateInvitationSchema = z.object({
   theme_id: z.enum(['elegant', 'modern', 'romantic', 'classic', 'minimal']).default('elegant'),
   is_published: z.boolean().optional().default(true),
   require_token: z.boolean().optional().default(false),
-  auto_generate_tokens: z.number().int().min(0).max(100).optional().default(0), // Otomatik kaç token oluşturulsun
+  auto_generate_tokens: z.number().int().min(0).max(100).optional().default(0),
+  custom_data: z.object({
+    venueName: z.string().max(200).optional(),
+    venueAddress: z.string().max(300).optional(),
+    venueMapUrl: z.string().max(500).optional(),
+    venuePhotos: z.array(z.string()).max(3).optional(),
+    personalMessage: z.string().max(300).optional(),
+    musicUrl: z.string().max(500).optional(),
+    videoUrl: z.string().max(500).optional(),
+    contactPhone: z.string().max(30).optional(),
+    contactEmail: z.string().max(100).optional(),
+    contactWhatsApp: z.string().max(30).optional(),
+    scheduleItems: z.array(z.object({
+      time: z.string(),
+      event: z.string(),
+      description: z.string(),
+      icon: z.string().optional(),
+    })).max(20).optional(),
+    features: z.object({
+      enableVideo: z.boolean().optional(),
+      enableMusic: z.boolean().optional(),
+      enableTestimonials: z.boolean().optional(),
+      enableContact: z.boolean().optional(),
+      enableSchedule: z.boolean().optional(),
+      enableCountdown: z.boolean().optional(),
+      enableEventCards: z.boolean().optional(),
+      enableDressCode: z.boolean().optional(),
+      enableFoodPreference: z.boolean().optional(),
+      enableAdditionalServices: z.boolean().optional(),
+    }).optional(),
+    dressCode: z.string().max(200).optional(),
+    faqs: z.array(z.object({
+      question: z.string().max(300),
+      answer: z.string().max(500),
+    })).max(20).optional(),
+    enableFAQs: z.boolean().optional(),
+    themeColors: z.object({
+      primaryColor: z.string().optional(),
+      secondaryColor: z.string().optional(),
+      fontFamily: z.string().optional(),
+    }).optional(),
+  }).optional(),
 });
 
 export async function POST(req: Request) {
@@ -65,7 +106,7 @@ export async function POST(req: Request) {
   if (parsed.data.theme_id) extendedFields.theme_id = parsed.data.theme_id;
   if (parsed.data.require_token !== undefined) extendedFields.require_token = parsed.data.require_token;
   if (defaultToken) extendedFields.default_token = defaultToken;
-  extendedFields.theme_config = {};
+  extendedFields.theme_config = parsed.data.custom_data || {};
 
   // Önce extended field'lar ile dene, hata alırsa base payload ile tekrar dene
   const insertData = { ...basePayload, ...extendedFields };

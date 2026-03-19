@@ -406,10 +406,10 @@ export default function InvitationDashboard() {
             >
               {lang === 'tr' ? '🔗 Linki Kopyala' : '🔗 Copy link'}
             </button>
-            {typeof navigator !== 'undefined' && navigator.share && (
-              <button
-                onClick={async () => {
-                  const url = typeof window !== 'undefined' ? `${window.location.origin}/invitation/${slug}` : '';
+            <button
+              onClick={async () => {
+                const url = typeof window !== 'undefined' ? `${window.location.origin}/invitation/${slug}` : '';
+                if (typeof navigator !== 'undefined' && navigator.share) {
                   try {
                     await navigator.share({
                       title: invitationData?.title || invitationData?.host_names || (lang === 'tr' ? 'Düğün Davetiyesi' : 'Wedding Invitation'),
@@ -422,16 +422,23 @@ export default function InvitationDashboard() {
                       showToast(lang === 'tr' ? 'Paylaşım iptal edildi veya hata.' : 'Share cancelled or failed.', 'error');
                     }
                   }
-                }}
-                className="px-4 py-3 rounded-xl border font-semibold transition-all"
-                style={{
-                  borderColor: 'var(--gold-base)',
-                  color: 'var(--gold-base)',
-                }}
-              >
-                {lang === 'tr' ? '📱 Paylaş' : '📱 Share'}
-              </button>
-            )}
+                } else {
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    showToast(lang === 'tr' ? 'Link kopyalandı! Paylaşmak için yapıştırın.' : 'Link copied! Paste to share.', 'success');
+                  } catch {
+                    showToast(lang === 'tr' ? 'Paylaşım desteklenmiyor.' : 'Sharing not supported.', 'error');
+                  }
+                }
+              }}
+              className="px-4 py-3 rounded-xl border font-semibold transition-all"
+              style={{
+                borderColor: 'var(--gold-base)',
+                color: 'var(--gold-base)',
+              }}
+            >
+              {lang === 'tr' ? '📱 Paylaş' : '📱 Share'}
+            </button>
           </div>
         </motion.div>
 

@@ -176,6 +176,8 @@ export function ScheduleTimeline({ scheduleItems }: ScheduleTimelineProps) {
     return null;
   }
 
+  const isCompact = validItems.length > 4;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -298,7 +300,7 @@ export function ScheduleTimeline({ scheduleItems }: ScheduleTimelineProps) {
                 {/* Time badge */}
                 <div className="relative z-10 mb-2">
                   <div 
-                    className="inline-block px-3 py-1.5 rounded-full text-sm font-semibold"
+                    className={`inline-block rounded-full font-semibold ${isCompact ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'}`}
                     style={{
                       backgroundColor: 'rgba(200, 162, 74, 0.15)',
                       color: tokens.colors.text.primary,
@@ -312,7 +314,7 @@ export function ScheduleTimeline({ scheduleItems }: ScheduleTimelineProps) {
                 {/* Icon circle */}
                 <div className="relative z-10 flex justify-center mb-3">
                   <div 
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-xl md:text-2xl"
+                    className={`rounded-full flex items-center justify-center ${isCompact ? 'w-10 h-10 md:w-11 md:h-11 text-lg md:text-xl' : 'w-12 h-12 md:w-14 md:h-14 text-xl md:text-2xl'}`}
                     style={{
                       backgroundColor: 'var(--bg-panel-strong)',
                       border: '2px solid rgba(200, 162, 74, 0.3)',
@@ -325,14 +327,14 @@ export function ScheduleTimeline({ scheduleItems }: ScheduleTimelineProps) {
                 {/* Event title */}
                 <div className="text-center">
                   <h4 
-                    className="text-sm md:text-base font-semibold mb-1"
+                    className={`font-semibold mb-1 ${isCompact ? 'text-xs md:text-sm' : 'text-sm md:text-base'}`}
                     style={{ color: tokens.colors.text.primary }}
                   >
                     {item.event}
                   </h4>
                   {item.description && (
                     <p 
-                      className="text-xs md:text-sm leading-relaxed"
+                      className={`leading-relaxed ${isCompact ? 'text-[10px] md:text-xs' : 'text-xs md:text-sm'}`}
                       style={{ color: tokens.colors.text.secondary }}
                     >
                       {item.description}

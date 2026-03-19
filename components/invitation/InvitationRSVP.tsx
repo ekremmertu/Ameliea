@@ -12,6 +12,7 @@ interface InvitationData {
   slug: string;
   rsvpDeadline?: string;
   scheduleItems?: Array<{ time: string; event: string; description: string; icon?: string }>;
+  features?: Record<string, boolean | undefined>;
   theme: {
     primaryColor: string;
     secondaryColor: string;
@@ -420,8 +421,8 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             </div>
           )}
 
-          {/* Food Preference */}
-          {formData.attending && (
+          {/* Food Preference - only if enabled */}
+          {formData.attending && invitationData.features?.enableFoodPreference && (
             <div>
               <label className="block mb-3 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
                 {t('invitation_rsvp_food_preference')}
@@ -546,8 +547,8 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             </div>
           )}
 
-          {/* Additional Services */}
-          {formData.attending && (
+          {/* Additional Services - only if enabled */}
+          {formData.attending && invitationData.features?.enableAdditionalServices && (
             <div>
               <label className="block mb-3 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
                 {t('invitation_rsvp_additional_services')}
@@ -616,6 +617,7 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
               id="rsvp-message"
               inputMode="text"
               rows={4}
+              maxLength={300}
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors resize-none text-base"
@@ -629,6 +631,9 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
               onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
               placeholder={lang === 'tr' ? 'Sizden haber almak isteriz' : 'We would love to hear from you'}
             />
+            <p className="text-xs text-right mt-1" style={{ color: formData.message.length >= 280 ? 'var(--crimson-base)' : 'var(--text-muted)' }}>
+              {formData.message.length}/300
+            </p>
           </div>
 
           {/* Guest Questions — only shown if wedding owner added questions */}

@@ -39,7 +39,8 @@ interface InvitationData {
   contactPhone?: string;
   contactEmail?: string;
   contactWhatsApp?: string;
-  scheduleItems?: Array<{ time: string; event: string; description: string }>;
+  dressCode?: string;
+  scheduleItems?: Array<{ time: string; event: string; description: string; icon?: string }>;
   features?: {
     enableVideo?: boolean;
     enableMusic?: boolean;
@@ -48,6 +49,9 @@ interface InvitationData {
     enableSchedule?: boolean;
     enableCountdown?: boolean;
     enableEventCards?: boolean;
+    enableDressCode?: boolean;
+    enableFoodPreference?: boolean;
+    enableAdditionalServices?: boolean;
   };
   themeId?: ThemeId;
   theme: {
@@ -85,13 +89,6 @@ export default function InvitationPage() {
           } catch { /* keep empty */ }
         }
 
-        const defaultSchedule = [
-          { time: '16:00', event: lang === 'tr' ? 'Tören' : 'Ceremony', description: lang === 'tr' ? 'Düğün töreni başlıyor' : 'Wedding ceremony begins' },
-          { time: '17:00', event: lang === 'tr' ? 'Kokteyl Saati' : 'Cocktail Hour', description: lang === 'tr' ? 'İçecekler ve atıştırmalıklar' : 'Drinks and appetizers' },
-          { time: '18:30', event: lang === 'tr' ? 'Resepsiyon' : 'Reception', description: lang === 'tr' ? 'Yemek ve kutlama' : 'Dinner and celebration' },
-          { time: '23:00', event: lang === 'tr' ? 'Dans' : 'Dancing', description: lang === 'tr' ? 'Eğlence devam ediyor' : 'Party continues' },
-        ];
-
         setInvitationData({
           id: data.id,
           slug: data.slug,
@@ -111,8 +108,9 @@ export default function InvitationPage() {
           contactPhone: data.contactPhone,
           contactEmail: data.contactEmail,
           contactWhatsApp: data.contactWhatsApp,
-          scheduleItems: (data.scheduleItems && data.scheduleItems.length > 0) ? data.scheduleItems : defaultSchedule,
-          features: data.features,
+          dressCode: data.dressCode,
+          scheduleItems: (data.scheduleItems && data.scheduleItems.length > 0) ? data.scheduleItems : undefined,
+          features: data.features || {},
           themeId: data.theme_id || 'elegant',
           theme: data.theme || {
             primaryColor: '#c8a24a',

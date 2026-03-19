@@ -12,6 +12,8 @@ interface InvitationData {
   venuePhotos?: string[];
   weddingDate: string;
   weddingTime: string;
+  dressCode?: string;
+  features?: Record<string, boolean | undefined>;
   theme: {
     primaryColor: string;
     secondaryColor: string;
@@ -172,31 +174,33 @@ export function InvitationDetails({ invitationData }: InvitationDetailsProps) {
             )}
           </motion.div>
 
-          {/* Dress Code */}
-          <motion.div
-            className="text-center"
-            variants={itemVariants}
-          >
-            <h2
-              className="text-3xl md:text-4xl font-bold mb-4"
-              style={{
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                color: tokens.colors.text.primary,
-              }}
+          {/* Dress Code - only show if explicitly enabled or dressCode text provided */}
+          {(invitationData.features?.enableDressCode || invitationData.dressCode) && (
+            <motion.div
+              className="text-center"
+              variants={itemVariants}
             >
-              {t('invitation_dress_code')}
-            </h2>
-            <p
-              className="text-xl md:text-2xl"
-              style={{
-                color: tokens.colors.text.secondary,
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                fontStyle: 'italic',
-              }}
-            >
-              {t('invitation_formal_attire')}
-            </p>
-          </motion.div>
+              <h2
+                className="text-3xl md:text-4xl font-bold mb-4"
+                style={{
+                  fontFamily: tokens.typography.fontFamily.serif.join(', '),
+                  color: tokens.colors.text.primary,
+                }}
+              >
+                {t('invitation_dress_code')}
+              </h2>
+              <p
+                className="text-xl md:text-2xl"
+                style={{
+                  color: tokens.colors.text.secondary,
+                  fontFamily: tokens.typography.fontFamily.serif.join(', '),
+                  fontStyle: 'italic',
+                }}
+              >
+                {invitationData.dressCode || t('invitation_formal_attire')}
+              </p>
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </section>

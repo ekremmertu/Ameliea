@@ -44,6 +44,9 @@ const MOCK_INVITATION = {
     enableTestimonials: true,
     enableContact: true,
     enableSchedule: true,
+    enableDressCode: true,
+    enableFoodPreference: true,
+    enableAdditionalServices: true,
   },
   themeId: 'elegant' as ThemeId,
   theme: {

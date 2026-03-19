@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
@@ -18,6 +18,59 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { showToast } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
 import { env } from '@/lib/env';
+
+function useGooglePlacesAutocomplete(
+  inputRef: React.RefObject<HTMLInputElement | null>,
+  onPlaceSelect: (place: { name: string; address: string }) => void
+) {
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  useEffect(() => {
+    const apiKey = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey || !inputRef.current) return;
+
+    const scriptId = 'google-maps-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=tr`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => initAutocomplete();
+      document.head.appendChild(script);
+    } else if (window.google?.maps?.places) {
+      initAutocomplete();
+    }
+
+    function initAutocomplete() {
+      if (!inputRef.current || !window.google?.maps?.places) return;
+      if (autocompleteRef.current) return;
+
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['establishment', 'geocode'],
+        componentRestrictions: { country: 'tr' },
+        fields: ['name', 'formatted_address'],
+      });
+
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current?.getPlace();
+        if (place) {
+          onPlaceSelect({
+            name: place.name || '',
+            address: place.formatted_address || '',
+          });
+        }
+      });
+    }
+
+    return () => {
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [inputRef, onPlaceSelect]);
+}
 
 interface ScheduleItem {
   time: string;
@@ -194,6 +247,16 @@ export default function CustomizePage() {
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
   const [previewLink, setPreviewLink] = useState<string | null>(null);
 
+  const venueInputRef = useRef<HTMLInputElement>(null);
+  const handlePlaceSelect = useCallback((place: { name: string; address: string }) => {
+    setFormData(prev => ({
+      ...prev,
+      venueName: place.name || prev.venueName,
+      venueAddress: place.address || prev.venueAddress,
+    }));
+  }, []);
+  useGooglePlacesAutocomplete(venueInputRef, handlePlaceSelect);
+
   // LocalStorage key for draft
   const DRAFT_STORAGE_KEY = `invitation-draft-${templateId}`;
 
@@ -358,6 +421,27 @@ export default function CustomizePage() {
           is_published: true,
           require_token: false,
           auto_generate_tokens: 0,
+          custom_data: {
+            venueName: formData.venueName,
+            venueAddress: formData.venueAddress,
+            venueMapUrl: formData.venueMapUrl,
+            venuePhotos: formData.venuePhotos,
+            personalMessage: formData.personalMessage,
+            musicUrl: formData.musicUrl,
+            videoUrl: formData.videoUrl,
+            contactPhone: formData.contactPhone,
+            contactEmail: formData.contactEmail,
+            contactWhatsApp: formData.contactWhatsApp,
+            scheduleItems: formData.scheduleItems,
+            features: formData.features,
+            faqs: formData.faqs,
+            enableFAQs: formData.enableFAQs,
+            themeColors: {
+              primaryColor: formData.theme.primaryColor,
+              secondaryColor: formData.theme.secondaryColor,
+              fontFamily: formData.theme.fontFamily,
+            },
+          },
         };
         const response = await fetch('/api/invitations/create', {
           method: 'POST',
@@ -616,6 +700,7 @@ export default function CustomizePage() {
                     {lang === 'tr' ? 'Mekan Adı *' : 'Venue Name *'}
                   </label>
                   <input
+                    ref={venueInputRef}
                     type="text"
                     required
                     value={formData.venueName}
@@ -629,6 +714,7 @@ export default function CustomizePage() {
                     }}
                     onFocus={(e) => { e.currentTarget.style.borderColor = formData.theme.primaryColor; }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
+                    placeholder={lang === 'tr' ? 'Mekan adını yazın...' : 'Type venue name...'}
                   />
                 </div>
 
@@ -671,7 +757,7 @@ export default function CustomizePage() {
                   </a>
                   <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden border-2" style={{ borderColor: formData.theme.primaryColor }}>
                     <iframe
-                      src={`https://www.google.com/maps/embed/v1/place?key=${env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&q=${encodeURIComponent(formData.venueAddress)}`}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(formData.venueAddress)}&z=15&output=embed`}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
@@ -679,11 +765,6 @@ export default function CustomizePage() {
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                       title={formData.venueName || 'Venue Location'}
-                      onError={(e) => {
-                        // Silently handle missing API key or 403 errors
-                        const iframe = e.currentTarget;
-                        iframe.style.display = 'none';
-                      }}
                     />
                   </div>
                 </div>
@@ -699,6 +780,7 @@ export default function CustomizePage() {
               
               <textarea
                 rows={3}
+                maxLength={300}
                 value={formData.personalMessage}
                 onChange={(e) => setFormData({ ...formData, personalMessage: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors resize-none text-base"
@@ -710,8 +792,11 @@ export default function CustomizePage() {
                 }}
                 onFocus={(e) => { e.currentTarget.style.borderColor = formData.theme.primaryColor; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
-                placeholder="Esta invitación es exclusiva para ti"
+                placeholder={lang === 'tr' ? 'Bu davetiye sadece senin için' : 'This invitation is exclusive for you'}
               />
+              <p className="text-xs text-right mt-1" style={{ color: formData.personalMessage.length >= 280 ? 'var(--crimson-base)' : tokens.colors.text.muted }}>
+                {formData.personalMessage.length}/300
+              </p>
             </section>
 
 
@@ -803,48 +888,66 @@ export default function CustomizePage() {
               
               <div className="space-y-4">
                 {formData.scheduleItems.map((item, index) => (
-                  <div key={index} className="flex gap-4 items-start">
-                    <input
-                      type="time"
-                      value={item.time}
-                      onChange={(e) => {
-                        // Only update the value, don't sort yet
-                        const newItems = [...formData.scheduleItems];
-                        newItems[index].time = e.target.value;
-                        setFormData({ ...formData, scheduleItems: newItems });
-                      }}
-                      onBlur={() => {
-                        // Sort when user leaves the input field
-                        const sortedItems = sortScheduleItemsByTime(formData.scheduleItems);
-                        setFormData({ ...formData, scheduleItems: sortedItems });
-                      }}
-                      onKeyDown={(e) => {
-                        // Sort when user presses Enter
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
+                  <div key={index} className="p-4 rounded-xl border space-y-3" style={{ borderColor: 'var(--border-base)', backgroundColor: 'var(--bg-panel)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
+                        {lang === 'tr' ? `Program ${index + 1}` : `Event ${index + 1}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newItems = formData.scheduleItems.filter((_, i) => i !== index);
+                          setFormData({ ...formData, scheduleItems: newItems });
+                        }}
+                        className="px-3 py-1 rounded-lg text-sm transition-all"
+                        style={{
+                          backgroundColor: 'var(--bg-panel-strong)',
+                          color: tokens.colors.text.secondary,
+                        }}
+                      >
+                        {lang === 'tr' ? 'Sil' : 'Delete'}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-center">
+                      <input
+                        type="time"
+                        value={item.time}
+                        onChange={(e) => {
+                          const newItems = [...formData.scheduleItems];
+                          newItems[index].time = e.target.value;
+                          setFormData({ ...formData, scheduleItems: newItems });
+                        }}
+                        onBlur={() => {
                           const sortedItems = sortScheduleItemsByTime(formData.scheduleItems);
                           setFormData({ ...formData, scheduleItems: sortedItems });
-                          (e.target as HTMLInputElement).blur();
-                        }
-                      }}
-                      className="px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
-                      style={{
-                        backgroundColor: 'var(--bg-panel)',
-                        borderColor: 'var(--border-base)',
-                        minHeight: '44px',
-                        fontSize: '16px',
-                        width: '120px',
-                      }}
-                    />
-                    <EmojiPicker
-                      currentEmoji={item.icon || getEventIcon(item.event)}
-                      onSelect={(emoji) => {
-                        const newItems = [...formData.scheduleItems];
-                        newItems[index].icon = emoji;
-                        setFormData({ ...formData, scheduleItems: newItems });
-                      }}
-                      themeColor={formData.theme.primaryColor}
-                    />
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const sortedItems = sortScheduleItemsByTime(formData.scheduleItems);
+                            setFormData({ ...formData, scheduleItems: sortedItems });
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        className="px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
+                        style={{
+                          backgroundColor: 'var(--bg-panel-strong)',
+                          borderColor: 'var(--border-base)',
+                          minHeight: '44px',
+                          fontSize: '16px',
+                          width: '120px',
+                        }}
+                      />
+                      <EmojiPicker
+                        currentEmoji={item.icon || getEventIcon(item.event)}
+                        onSelect={(emoji) => {
+                          const newItems = [...formData.scheduleItems];
+                          newItems[index].icon = emoji;
+                          setFormData({ ...formData, scheduleItems: newItems });
+                        }}
+                        themeColor={formData.theme.primaryColor}
+                      />
+                    </div>
                     <input
                       type="text"
                       value={item.event}
@@ -853,9 +956,9 @@ export default function CustomizePage() {
                         newItems[index].event = e.target.value;
                         setFormData({ ...formData, scheduleItems: newItems });
                       }}
-                      className="flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
+                      className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
                       style={{
-                        backgroundColor: 'var(--bg-panel)',
+                        backgroundColor: 'var(--bg-panel-strong)',
                         borderColor: 'var(--border-base)',
                         minHeight: '44px',
                         fontSize: '16px',
@@ -870,30 +973,15 @@ export default function CustomizePage() {
                         newItems[index].description = e.target.value;
                         setFormData({ ...formData, scheduleItems: newItems });
                       }}
-                      className="flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
+                      className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
                       style={{
-                        backgroundColor: 'var(--bg-panel)',
+                        backgroundColor: 'var(--bg-panel-strong)',
                         borderColor: 'var(--border-base)',
                         minHeight: '44px',
                         fontSize: '16px',
                       }}
                       placeholder={lang === 'tr' ? 'Açıklama' : 'Description'}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newItems = formData.scheduleItems.filter((_, i) => i !== index);
-                        setFormData({ ...formData, scheduleItems: newItems });
-                      }}
-                      className="px-4 py-3 rounded-xl border transition-all min-h-[44px]"
-                      style={{
-                        backgroundColor: 'var(--bg-panel)',
-                        borderColor: 'var(--border-base)',
-                        color: tokens.colors.text.secondary,
-                      }}
-                    >
-                      ×
-                    </button>
                   </div>
                 ))}
                 <button
@@ -933,7 +1021,25 @@ export default function CustomizePage() {
                   <input
                     type="checkbox"
                     checked={formData.enableFAQs}
-                    onChange={(e) => setFormData({ ...formData, enableFAQs: e.target.checked })}
+                    onChange={(e) => {
+                      const enabling = e.target.checked;
+                      const defaultFAQs = lang === 'tr'
+                        ? [
+                            { question: 'Hediye yerine ne getirebilirim?', answer: 'Varlığınız bizim için en güzel hediye! Yine de düşünürseniz, küçük bir katkı hesabımıza yapılabilir.' },
+                            { question: 'Çocuklar katılabilir mi?', answer: 'Elbette! Çocuklarınızla birlikte gelmenizden mutluluk duyarız.' },
+                            { question: 'Otopark var mı?', answer: 'Mekanın geniş bir otoparkı mevcuttur. Ücretsiz olarak kullanabilirsiniz.' },
+                          ]
+                        : [
+                            { question: 'What should I bring instead of a gift?', answer: 'Your presence is the best gift! But if you wish, a small contribution to our account is welcome.' },
+                            { question: 'Can children attend?', answer: 'Of course! We would be happy to have you with your children.' },
+                            { question: 'Is there parking available?', answer: 'The venue has a large parking area. You can use it free of charge.' },
+                          ];
+                      setFormData({
+                        ...formData,
+                        enableFAQs: enabling,
+                        faqs: enabling && (!formData.faqs || formData.faqs.length === 0) ? defaultFAQs : formData.faqs,
+                      });
+                    }}
                     className="w-5 h-5 rounded border-2 transition-all"
                     style={{
                       accentColor: formData.theme.primaryColor,
@@ -1322,7 +1428,7 @@ export default function CustomizePage() {
               >
                 {saving 
                   ? (lang === 'tr' ? 'Oluşturuluyor...' : 'Creating...')
-                  : (lang === 'tr' ? 'Davetiye Oluştur' : 'Create Invitation')}
+                  : (lang === 'tr' ? '💳 Satın Al ve Oluştur' : '💳 Purchase & Create')}
               </button>
             </div>
           </form>
