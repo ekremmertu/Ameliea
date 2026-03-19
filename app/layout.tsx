@@ -45,6 +45,11 @@ export const metadata: Metadata = {
     locale: "en_US",
     alternateLocale: ["tr_TR"],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ameliea — Premium Digital Invitations",
+    description: "An invitation that feels like a vow.",
+  },
   robots: {
     index: true,
     follow: true,

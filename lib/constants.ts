@@ -59,7 +59,7 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
         'Schedule timeline',
         'Google Maps integration',
         'Limited edits (3 times)',
-        '7-day access',
+        '1-week access',
         'Email support',
       ],
     },
@@ -134,8 +134,8 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
 
 export const UPSELL_COPY = {
   lightToPremiun: {
-    tr: 'Hikayenizi daha unutulmaz kılmak ister misiniz? Premium ile sınırsız düzenleme, gelişmiş analitik ve tam kontrol sizin.',
-    en: 'Want to make your story even more memorable? With Premium, unlimited edits, advanced analytics and full control are yours.',
+    tr: 'Hikayenizi daha unutulmaz kılmak ister misiniz? Premium ile sınırsız düzenleme ve tam kontrol sizin.',
+    en: 'Want to make your story even more memorable? With Premium, unlimited edits and full control are yours.',
   },
 } as const;
 
@@ -178,6 +178,16 @@ export const FILE_UPLOAD_LIMITS = {
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
     allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
   },
+  VIDEO: {
+    maxSize: 50 * 1024 * 1024, // 50MB
+    allowedTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+    allowedExtensions: ['.mp4', '.webm', '.mov'],
+  },
+  AUDIO: {
+    maxSize: 10 * 1024 * 1024, // 10MB
+    allowedTypes: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'],
+    allowedExtensions: ['.mp3', '.wav', '.ogg'],
+  },
 } as const;
 
 // Content Limits
@@ -196,8 +206,14 @@ export const CONTENT_LIMITS = {
 // Token Configuration
 export const TOKEN_CONFIG = {
   LENGTH: 32,
-  EXPIRATION_DAYS: 365, // 1 year default
-  MAX_USES: null, // null = unlimited
+  EXPIRATION_DAYS: 365,
+  MAX_USES: null,
+} as const;
+
+// Plan access duration in days
+export const PLAN_ACCESS_DURATION = {
+  light: 7,
+  premium: null, // null = lifetime
 } as const;
 
 // Invitation Configuration

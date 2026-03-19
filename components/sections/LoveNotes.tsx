@@ -8,18 +8,18 @@ import { Card } from '@/components/ui/Card';
 
 const testimonials = {
   en: [
-    { quote: '"We set it up in one evening. Three days later, we had 80 confirmed RSVPs—no chasing anyone."', who: '— A & E' },
-    { quote: '"Our parents kept asking how we made something this polished. We just picked a theme."', who: '— L & R' },
-    { quote: '"I dreaded managing guest lists. The dashboard handled everything—I just checked in once a day."', who: '— S & M' },
-    { quote: '"Guests replied within minutes. Some even sent us love notes through the invitation."', who: '— M & J' },
-    { quote: '"We skipped the printing chaos entirely. Best decision of our wedding planning."', who: '— K & D' },
+    { quote: '"We set it up in 10 minutes and never had to answer \'where\'s the venue?\' again."', who: '— A & E' },
+    { quote: '"Our guests actually RSVP\'d on time. That alone was worth it."', who: '— L & R' },
+    { quote: '"We skipped the paper invites and put the savings toward the honeymoon."', who: '— S & M' },
+    { quote: '"The dashboard let us see exactly who was coming—no more guessing at the caterer\'s count."', who: '— M & J' },
+    { quote: '"Three couples at our wedding asked us how we made it. That says everything."', who: '— K & D' },
   ],
   tr: [
-    { quote: '"Bir akşamda kurduk. Üç gün sonra elimizde 80 onaylı RSVP vardı—kimsenin peşinden koşmadık."', who: '— A & E' },
-    { quote: '"Ailemiz bu kadar profesyonel bir şeyi nasıl yaptığımızı sormaya devam etti. Biz sadece tema seçtik."', who: '— L & R' },
-    { quote: '"Misafir listesi yönetmekten korkuyordum. Panel her şeyi halletti—günde bir kez baktım yetti."', who: '— S & M' },
-    { quote: '"Misafirler dakikalar içinde yanıtladı. Bazıları davetiye üzerinden bize mesaj bile yazdı."', who: '— M & J' },
-    { quote: '"Basılı davetiye kaosunu tamamen atladık. Düğün planlamasının en iyi kararıydı."', who: '— K & D' },
+    { quote: '"10 dakikada kurduk, bir daha kimse \'mekan nerede?\' diye sormadı."', who: '— A & E' },
+    { quote: '"Misafirlerimiz gerçekten zamanında RSVP yaptı. Sadece bu bile yeterliydi."', who: '— L & R' },
+    { quote: '"Kağıt davetiyeyi atladık, tasarrufu balayına yatırdık."', who: '— S & M' },
+    { quote: '"Panelden kimin geldiğini anlık gördük—catering sayısında artık tahmin yok."', who: '— M & J' },
+    { quote: '"Düğünümüzde üç çift nasıl yaptığımızı sordu. Bu her şeyi anlatıyor."', who: '— K & D' },
   ],
 };
 

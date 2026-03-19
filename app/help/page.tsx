@@ -32,7 +32,7 @@ export default function HelpPage() {
     },
     {
       question: t('help.faq5.question', 'What is the difference between Light and Premium plans?'),
-      answer: t('help.faq5.answer', 'Light gives you a beautiful invitation with essential RSVP features and 7-day access. Premium adds countdown timer, guest questions, advanced analytics, unlimited edits, theme customization, and lifetime access.'),
+      answer: t('help.faq5.answer', 'Light gives you a beautiful invitation with essential RSVP features and 1-week access. Premium adds countdown timer, guest questions, advanced analytics, unlimited edits, theme customization, and lifetime access.'),
     },
     {
       question: t('help.faq6.question', 'Can I export my guest list?'),

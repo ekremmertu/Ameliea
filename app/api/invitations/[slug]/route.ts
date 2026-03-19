@@ -29,8 +29,6 @@ const MOCK_INVITATION = {
   venueMapUrl: 'https://maps.google.com',
   personalMessage: 'Sizleri aramızda görmek bizi çok mutlu edecek.',
   rsvpDeadline: '2026-03-15',
-  musicUrl: undefined as string | undefined,
-  videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
   contactPhone: '+90 532 000 00 00',
   contactEmail: 'ornek@davetiye.com',
   contactWhatsApp: '+905320000000',
@@ -40,8 +38,6 @@ const MOCK_INVITATION = {
     { time: '19:00', event: 'Düğün', description: 'Yemek ve dans' },
   ],
   features: {
-    enableVideo: true,
-    enableMusic: false,
     enableTestimonials: true,
     enableContact: true,
     enableSchedule: true,

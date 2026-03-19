@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { PLAN_ACCESS_DURATION } from '@/lib/constants';
 
 const CreatePurchaseSchema = z.object({
   plan_type: z.enum(['light', 'premium']),
@@ -67,12 +68,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // Light plan: 1 week from now
-    // Premium plan: Lifetime (null)
+    const durationDays = PLAN_ACCESS_DURATION[parsed.data.plan_type as keyof typeof PLAN_ACCESS_DURATION];
     let expiresAt: string | null = null;
-    if (parsed.data.plan_type === 'light') {
+    if (durationDays) {
       const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 7);
+      expiryDate.setDate(expiryDate.getDate() + durationDays);
       expiresAt = expiryDate.toISOString();
     }
 

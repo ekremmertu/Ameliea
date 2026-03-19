@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
+
 interface InvitationData {
   venueName: string;
   venueAddress: string;

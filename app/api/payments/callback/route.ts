@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { handlePaymentCallback } from '@/lib/iyzico';
 import { env } from '@/lib/env';
+import { PLAN_ACCESS_DURATION } from '@/lib/constants';
 
 const CallbackSchema = z.object({
   paymentId: z.string().min(1, 'Payment ID is required'),
@@ -54,10 +55,10 @@ export async function GET(req: Request) {
     }
 
     if (callbackResult.paymentStatus === 'SUCCESS') {
-      const expiresAt =
-        purchase.plan_type === 'light'
-          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-          : null;
+      const durationDays = PLAN_ACCESS_DURATION[purchase.plan_type as keyof typeof PLAN_ACCESS_DURATION];
+      const expiresAt = durationDays
+        ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
       await supabase
         .from('purchases')
@@ -162,11 +163,10 @@ export async function POST(req: Request) {
 
     // Check payment status
     if (callbackResult.paymentStatus === 'SUCCESS') {
-      // Payment successful - update purchase status
-      const expiresAt =
-        purchase.plan_type === 'light'
-          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-          : null;
+      const durationDays = PLAN_ACCESS_DURATION[purchase.plan_type as keyof typeof PLAN_ACCESS_DURATION];
+      const expiresAt = durationDays
+        ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
       const { error: updateError } = await supabase
         .from('purchases')
