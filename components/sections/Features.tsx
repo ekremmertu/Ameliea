@@ -30,7 +30,7 @@ const itemVariants = {
 };
 
 export function Features() {
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
 
   // Demo data for showcase - Tanıtım için sabit 3 gün geri sayım
   // Her zaman 3 gün göster, eğer 2 güne düşerse tekrar 3 güne çıkar
@@ -71,12 +71,10 @@ export function Features() {
               color: tokens.colors.text.primary,
             }}
           >
-            {lang === 'tr' ? 'Her Detay, Sizin Hikayenizden' : 'Every Detail, From Your Story'}
+            {t('features_title')}
           </h2>
           <p className="text-xl md:text-2xl max-w-3xl mx-auto" style={{ color: tokens.colors.text.secondary }}>
-            {lang === 'tr' 
-              ? 'Davetiyenizde sunabileceğiniz tüm özellikler'
-              : 'All the features you can offer in your invitation'}
+            {t('features_subtitle')}
           </p>
         </motion.div>
 
@@ -104,8 +102,8 @@ export function Features() {
                 </div>
                 <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
                   {lang === 'tr' 
-                    ? 'Düğün tarihine kalan süreyi canlı olarak gösterin. Misafirleriniz heyecanla bekleyecek.'
-                    : 'Show the time remaining until your wedding date in real-time. Your guests will wait with excitement.'}
+                    ? 'Misafirlerinizde heyecan ve beklenti yaratın. Her saniye, gününüze olan özlemi büyütür.'
+                    : 'Build excitement and anticipation with your guests. Every second grows their longing for your day.'}
                 </p>
               </div>
               <div className="flex justify-center">
@@ -128,8 +126,8 @@ export function Features() {
                 </h3>
                 <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
                   {lang === 'tr' 
-                    ? 'Günün programını görsel bir zaman çizelgesi ile sunun. Her etkinlik için özel ikonlar ve açıklamalar ekleyin.'
-                    : 'Present the day\'s schedule with a visual timeline. Add custom icons and descriptions for each event.'}
+                    ? 'Misafirleriniz her an nerede olacaklarını bilsin. Sorular azalsın, keyif artsın.'
+                    : 'Your guests know exactly where to be and when. Fewer questions, more joy.'}
                 </p>
               </div>
               <div className="order-1 md:order-2">
@@ -149,8 +147,8 @@ export function Features() {
                 </h3>
                 <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
                   {lang === 'tr' 
-                    ? 'Mekanınızın en güzel fotoğraflarını ekleyin. Slider ile misafirlerinize mekanı tanıtın.'
-                    : 'Add the most beautiful photos of your venue. Introduce your venue to guests with a slider.'}
+                    ? 'Mekanınızın atmosferini hissettirin. Misafirleriniz daha gelmeden heyecanlanmaya başlasın.'
+                    : 'Let your guests feel the atmosphere before they arrive. The excitement starts now.'}
                 </p>
               </div>
               <div className="flex justify-center">
@@ -170,8 +168,8 @@ export function Features() {
                 </h3>
                 <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
                   {lang === 'tr' 
-                    ? 'Mekan adresinizi ekleyin, misafirleriniz haritada görebilsin ve tek tıkla navigasyon başlatabilsin.'
-                    : 'Add your venue address, let your guests see it on the map and start navigation with one click.'}
+                    ? '"Mekan neredeydi?" sorusunu bir daha duymayın. Tek tıkla navigasyon, sıfır karışıklık.'
+                    : 'Never hear "where was the venue?" again. One-tap navigation, zero confusion.'}
                 </p>
               </div>
               <div className="order-1 md:order-2">
@@ -200,8 +198,8 @@ export function Features() {
                 </h3>
                 <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
                   {lang === 'tr' 
-                    ? 'Misafirlerinizin sık sorduğu soruları önceden cevaplayın. Dress code, park yeri, çocuk kabulü gibi detayları ekleyin.'
-                    : 'Answer frequently asked questions in advance. Add details like dress code, parking, children acceptance.'}
+                    ? 'Dress code, park yeri, çocuk kabulü... Tekrar tekrar aynı soruları cevaplamak yerine, her şeyi bir kerede anlatın.'
+                    : 'Dress code, parking, kids... Instead of answering the same questions over and over, share everything at once.'}
                 </p>
               </div>
               <div className="order-1 md:order-2">
@@ -236,8 +234,8 @@ export function Features() {
                 </h3>
                 <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
                   {lang === 'tr' 
-                    ? 'Misafirlerinize özel sorular sorun ve cevaplarını alın. Menü tercihleri, +1 bilgisi, özel notlar gibi.'
-                    : 'Ask custom questions to your guests and get their answers. Menu preferences, +1 information, special notes, etc.'}
+                    ? 'Menü tercihi, alerji, +1 bilgisi... Her misafirin ihtiyacını önceden bilin, sürprizlere yer bırakmayın.'
+                    : 'Menu preference, allergies, plus-ones... Know every guest\'s needs in advance, leave nothing to chance.'}
                 </p>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: 'rgba(200, 162, 74, 0.1)' }}>
                   <span className="text-sm font-medium" style={{ color: 'var(--gold-base)' }}>

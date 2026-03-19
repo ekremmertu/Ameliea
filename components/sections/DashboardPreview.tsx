@@ -5,7 +5,7 @@ import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
 
 export function DashboardPreview() {
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
 
   return (
     <section className="py-24 px-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%)' }}>
@@ -29,7 +29,7 @@ export function DashboardPreview() {
               color: 'var(--gold-base)',
               border: '1px solid rgba(200, 162, 74, 0.2)'
             }}>
-              {lang === 'tr' ? 'Premium Özellik' : 'Premium Feature'}
+              {t('dashboard_badge')}
             </span>
           </div>
           <h2
@@ -40,12 +40,10 @@ export function DashboardPreview() {
               letterSpacing: '-0.02em',
             }}
           >
-            {lang === 'tr' ? 'Davetiye Yönetim Paneli' : 'Invitation Dashboard'}
+            {t('dashboard_title')}
           </h2>
           <p className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed" style={{ color: tokens.colors.text.secondary }}>
-            {lang === 'tr' 
-              ? 'RSVP yanıtlarınızı gerçek zamanlı takip edin, detaylı istatistikleri görüntüleyin ve davetiyenizi profesyonelce yönetin'
-              : 'Track your RSVP responses in real-time, view detailed statistics, and manage your invitation professionally'}
+            {t('dashboard_subtitle')}
           </p>
         </motion.div>
 
@@ -263,15 +261,8 @@ export function DashboardPreview() {
           viewport={{ once: true }}
           transition={{ delay: 0.6 }}
         >
-          <p className="text-lg mb-2" style={{ color: tokens.colors.text.secondary }}>
-            {lang === 'tr' 
-              ? 'Davetiyenizi oluşturduktan sonra özel yönetim paneline erişebilirsiniz'
-              : 'After creating your invitation, you\'ll have access to a private dashboard'}
-          </p>
           <p className="text-sm" style={{ color: tokens.colors.text.muted }}>
-            {lang === 'tr' 
-              ? 'Gerçek zamanlı güncellemeler • Detaylı analitik • Profesyonel yönetim'
-              : 'Real-time updates • Detailed analytics • Professional management'}
+            {t('dashboard_footer')}
           </p>
         </motion.div>
       </div>

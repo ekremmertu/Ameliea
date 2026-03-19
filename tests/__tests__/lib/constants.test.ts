@@ -4,6 +4,7 @@
 
 import {
   getPlanPricing,
+  getFormattedPrice,
   isValidPlanType,
   PLAN_TYPES,
   PLAN_PRICING,
@@ -15,18 +16,32 @@ describe('Constants', () => {
       const pricing = getPlanPricing(PLAN_TYPES.LIGHT);
       expect(pricing.amount).toBe(1999.0);
       expect(pricing.currency).toBe('TRY');
-      expect(pricing.name.tr).toBe('Light Plan');
+      expect(pricing.name.tr).toBe('Light');
     });
 
     it('should return premium plan pricing', () => {
       const pricing = getPlanPricing(PLAN_TYPES.PREMIUM);
       expect(pricing.amount).toBe(3999.0);
       expect(pricing.currency).toBe('TRY');
-      expect(pricing.name.tr).toBe('Premium Plan');
+      expect(pricing.name.tr).toBe('Premium');
     });
 
     it('should throw error for invalid plan type', () => {
-      expect(() => getPlanPricing('invalid' as any)).toThrow('Invalid plan type');
+      expect(() => getPlanPricing('invalid' as never)).toThrow('Invalid plan type');
+    });
+  });
+
+  describe('getFormattedPrice', () => {
+    it('should format light plan price', () => {
+      const price = getFormattedPrice(PLAN_TYPES.LIGHT);
+      expect(price).toContain('1');
+      expect(price).toContain('999');
+    });
+
+    it('should format premium plan price', () => {
+      const price = getFormattedPrice(PLAN_TYPES.PREMIUM);
+      expect(price).toContain('3');
+      expect(price).toContain('999');
     });
   });
 
@@ -55,10 +70,30 @@ describe('Constants', () => {
       expect(PLAN_PRICING.premium.amount).toBeGreaterThan(PLAN_PRICING.light.amount);
     });
 
-    it('should have features defined', () => {
-      expect(Array.isArray(PLAN_PRICING.light.features)).toBe(true);
-      expect(Array.isArray(PLAN_PRICING.premium.features)).toBe(true);
-      expect(PLAN_PRICING.premium.features.length).toBeGreaterThan(PLAN_PRICING.light.features.length);
+    it('should have bilingual features', () => {
+      expect(Array.isArray(PLAN_PRICING.light.features.tr)).toBe(true);
+      expect(Array.isArray(PLAN_PRICING.light.features.en)).toBe(true);
+      expect(Array.isArray(PLAN_PRICING.premium.features.tr)).toBe(true);
+      expect(Array.isArray(PLAN_PRICING.premium.features.en)).toBe(true);
+      expect(PLAN_PRICING.premium.features.tr.length).toBeGreaterThan(PLAN_PRICING.light.features.tr.length);
+    });
+
+    it('should have tagline and emotionalHook for each plan', () => {
+      expect(PLAN_PRICING.light.tagline.tr).toBeTruthy();
+      expect(PLAN_PRICING.light.emotionalHook.tr).toBeTruthy();
+      expect(PLAN_PRICING.premium.tagline.tr).toBeTruthy();
+      expect(PLAN_PRICING.premium.emotionalHook.tr).toBeTruthy();
+    });
+
+    it('should mark premium as recommended', () => {
+      expect(PLAN_PRICING.light.recommended).toBe(false);
+      expect(PLAN_PRICING.premium.recommended).toBe(true);
+    });
+
+    it('should have badge only on premium', () => {
+      expect(PLAN_PRICING.light.badge).toBeNull();
+      expect(PLAN_PRICING.premium.badge).not.toBeNull();
+      expect(PLAN_PRICING.premium.badge?.tr).toBeTruthy();
     });
   });
 });

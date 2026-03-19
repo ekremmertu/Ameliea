@@ -4,16 +4,16 @@
 
 ---
 
-## 🎯 Premium Strategy
+## 🎯 Sales Strategy
 
-This site positions wedding organization as a **premium, elite, emotional experience**—not a transactional service.
+This site positions wedding invitations as a **premium, emotional experience** for brides who value aesthetics and control.
 
 ### Key Principles
-- ❌ **NO pricing** displayed
-- ❌ **NO package details** listed
-- ✅ **Conversation-focused CTAs**: "Start a conversation", "Tell us your story"
-- ✅ **Emotional connection** over information overload
-- ✅ **Elite filtering**: Only attracts high-budget, experience-focused couples
+- ✅ **Two-tier model**: Light (elegant start) + Premium (unforgettable experience)
+- ✅ **Emotion-first CTAs**: "Create your invitation", "Start creating now"
+- ✅ **Decision architecture**: Premium pre-selected, bride-focused badge, outcome-driven copy
+- ✅ **Soft upsell**: Light checkout shows a gentle Premium upgrade nudge
+- ✅ **Centralized plan data**: All pricing, features and sales copy in `lib/constants.ts`
 
 ---
 

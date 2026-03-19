@@ -11,37 +11,137 @@ export const PLAN_TYPES = {
 
 export type PlanType = typeof PLAN_TYPES[keyof typeof PLAN_TYPES];
 
+export interface PlanDetail {
+  amount: number;
+  currency: string;
+  name: { tr: string; en: string };
+  tagline: { tr: string; en: string };
+  emotionalHook: { tr: string; en: string };
+  badge: { tr: string; en: string } | null;
+  recommended: boolean;
+  features: { tr: string[]; en: string[] };
+  premiumOnlyFeatures: { tr: string[]; en: string[] };
+  upsellMessage: { tr: string; en: string } | null;
+}
+
 // Server-side pricing - NEVER trust client-side amounts
-export const PLAN_PRICING = {
+export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
   [PLAN_TYPES.LIGHT]: {
     amount: 1999.0,
     currency: 'TRY',
     name: {
-      tr: 'Light Plan',
-      en: 'Light Plan',
+      tr: 'Light',
+      en: 'Light',
     },
-    features: [
-      '1 davetiye',
-      'Temel temalar',
-      'RSVP yönetimi',
-      '30 gün erişim',
-    ],
+    tagline: {
+      tr: 'Zarif bir başlangıç',
+      en: 'An elegant start',
+    },
+    emotionalHook: {
+      tr: 'Hikayenizi sade ve şık bir şekilde anlatmak için ihtiyacınız olan her şey.',
+      en: 'Everything you need to tell your story with simplicity and elegance.',
+    },
+    badge: null,
+    recommended: false,
+    features: {
+      tr: [
+        'Profesyonel şablon davetiye',
+        'Temel RSVP yönetimi',
+        'Program zaman çizelgesi',
+        'Mekan fotoğrafları',
+        'Google Maps entegrasyonu',
+        'Sınırlı düzenleme (3 kez)',
+        '30 gün erişim',
+        'E-posta desteği',
+      ],
+      en: [
+        'Professional template invitation',
+        'Basic RSVP management',
+        'Schedule timeline',
+        'Venue photos',
+        'Google Maps integration',
+        'Limited edits (3 times)',
+        '30-day access',
+        'Email support',
+      ],
+    },
+    premiumOnlyFeatures: { tr: [], en: [] },
+    upsellMessage: null,
   },
   [PLAN_TYPES.PREMIUM]: {
     amount: 3999.0,
     currency: 'TRY',
     name: {
-      tr: 'Premium Plan',
-      en: 'Premium Plan',
+      tr: 'Premium',
+      en: 'Premium',
     },
-    features: [
-      'Sınırsız davetiye',
-      'Tüm premium temalar',
-      'RSVP yönetimi',
-      'Misafir soruları',
-      'Video & müzik',
-      'Ömür boyu erişim',
-    ],
+    tagline: {
+      tr: 'Unutulmaz bir deneyim',
+      en: 'An unforgettable experience',
+    },
+    emotionalHook: {
+      tr: 'Düğününüzün her anını kontrol edin, misafirlerinizi etkileyin ve içiniz rahat olsun.',
+      en: 'Control every moment of your wedding, impress your guests, and feel at ease.',
+    },
+    badge: {
+      tr: 'Gelinlerin Favorisi',
+      en: 'Brides\' Favorite',
+    },
+    recommended: true,
+    features: {
+      tr: [
+        'Profesyonel şablon davetiye',
+        'Premium RSVP yönetim paneli',
+        'Sınırsız düzenleme',
+        'Video & Müzik entegrasyonu',
+        'Geri sayım sayacı',
+        'Misafir soruları & mesajları',
+        'Gelişmiş analitik',
+        'Tema özelleştirme',
+        'Öncelikli destek',
+        'Ömür boyu erişim',
+      ],
+      en: [
+        'Professional template invitation',
+        'Premium RSVP management dashboard',
+        'Unlimited edits',
+        'Video & Music integration',
+        'Countdown timer',
+        'Guest questions & messages',
+        'Advanced analytics',
+        'Theme customization',
+        'Priority support',
+        'Lifetime access',
+      ],
+    },
+    premiumOnlyFeatures: {
+      tr: [
+        'Video & Müzik entegrasyonu',
+        'Geri sayım sayacı',
+        'Misafir soruları & mesajları',
+        'Gelişmiş analitik',
+        'Tema özelleştirme',
+        'Öncelikli destek',
+        'Ömür boyu erişim',
+      ],
+      en: [
+        'Video & Music integration',
+        'Countdown timer',
+        'Guest questions & messages',
+        'Advanced analytics',
+        'Theme customization',
+        'Priority support',
+        'Lifetime access',
+      ],
+    },
+    upsellMessage: null,
+  },
+} as const;
+
+export const UPSELL_COPY = {
+  lightToPremiun: {
+    tr: 'Hikayenizi daha unutulmaz kılmak ister misiniz? Premium ile sınırsız düzenleme, video ve tam kontrol sizin.',
+    en: 'Want to make your story even more memorable? With Premium, unlimited edits, video and full control are yours.',
   },
 } as const;
 
@@ -49,12 +149,17 @@ export const PLAN_PRICING = {
  * Get plan pricing - SERVER SIDE ONLY
  * This ensures pricing cannot be manipulated by the client
  */
-export function getPlanPricing(planType: PlanType) {
+export function getPlanPricing(planType: PlanType): PlanDetail {
   const pricing = PLAN_PRICING[planType];
   if (!pricing) {
     throw new Error(`Invalid plan type: ${planType}`);
   }
   return pricing;
+}
+
+export function getFormattedPrice(planType: PlanType): string {
+  const pricing = getPlanPricing(planType);
+  return `₺${pricing.amount.toLocaleString('tr-TR')}`;
 }
 
 /**

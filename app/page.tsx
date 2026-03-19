@@ -52,9 +52,9 @@ function PurchaseMessageBanner() {
 }
 
 export default function Home() {
-  const [showIntro, setShowIntro] = useState(false); // Start with false, check in useEffect
+  const [showIntro, setShowIntro] = useState(false);
   const router = useRouter();
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
 
   useEffect(() => {
     // Landing animasyonu şimdilik devre dışı
@@ -114,7 +114,7 @@ export default function Home() {
             <section className="py-20 px-4" style={{ background: 'var(--bg-secondary)' }}>
               <div className="max-w-4xl mx-auto text-center">
                 <motion.h2
-                  className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8"
+                  className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6"
                   style={{
                     fontFamily: tokens.typography.fontFamily.serif.join(', '),
                     color: tokens.colors.text.primary,
@@ -124,10 +124,18 @@ export default function Home() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6 }}
                 >
-                  {lang === 'tr' 
-                    ? 'Düğününüzün ilk izlenimini oluşturmaya hazır mısınız?'
-                    : 'Ready to create your wedding\'s first impression?'}
+                  {t('final_title')}
                 </motion.h2>
+                <motion.p
+                  className="text-xl md:text-2xl mb-10 max-w-2xl mx-auto"
+                  style={{ color: tokens.colors.text.secondary }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                >
+                  {t('final_sub')}
+                </motion.p>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -137,10 +145,15 @@ export default function Home() {
                 >
                   <Button
                     variant="primary"
-                    onClick={() => router.push('/checkout')}
+                    onClick={() => {
+                      const pricingElement = document.getElementById('pricing');
+                      if (pricingElement) {
+                        pricingElement.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
                     className="text-xl px-10 py-5"
                   >
-                    {lang === 'tr' ? 'Satın Al' : 'Buy Now'}
+                    {t('final_btn')}
                   </Button>
                 </motion.div>
               </div>

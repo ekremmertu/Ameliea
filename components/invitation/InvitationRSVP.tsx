@@ -37,7 +37,6 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
     attending: true,
     guests: 1,
     foodPreference: '' as string,
-    dietaryRestrictions: '',
     message: '',
     selectedEvents: [] as string[],
     guestAnswers: {} as Record<string, string>,
@@ -85,11 +84,10 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
           guests_count: formData.guests,
           note: [
             formData.foodPreference ? `${lang === 'tr' ? 'Yemek' : 'Food'}: ${formData.foodPreference}` : '',
-            formData.dietaryRestrictions ? `${lang === 'tr' ? 'Diyet' : 'Dietary'}: ${formData.dietaryRestrictions}` : '',
             formData.needsTransportation ? (lang === 'tr' ? 'Ulaşım gerekiyor' : 'Transportation needed') : '',
             formData.needsAccommodation ? (lang === 'tr' ? 'Konaklama gerekiyor' : 'Accommodation needed') : '',
-            formData.message || '',
           ].filter(Boolean).join('\n').trim() || undefined,
+          love_note_message: formData.message?.trim() || undefined,
           selected_events: formData.selectedEvents.length > 0 ? formData.selectedEvents : undefined,
         }),
       });
@@ -139,7 +137,6 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
         attending: true,
         guests: 1,
         foodPreference: '',
-        dietaryRestrictions: '',
         message: '',
         selectedEvents: [],
         guestAnswers: {},
@@ -518,32 +515,6 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
                   </label>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Dietary Restrictions */}
-          {formData.attending && (
-            <div>
-              <label htmlFor="rsvp-dietary" className="block mb-2 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
-                {t('invitation_rsvp_dietary')}
-              </label>
-              <textarea
-                id="rsvp-dietary"
-                inputMode="text"
-                rows={3}
-                value={formData.dietaryRestrictions}
-                onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors resize-none text-base"
-                style={{
-                  backgroundColor: 'var(--bg-panel-strong)',
-                  borderColor: 'var(--border-base)',
-                  minHeight: '80px',
-                  fontSize: '16px',
-                }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
-                placeholder={lang === 'tr' ? 'Lütfen diyet kısıtlamaları veya alerjiler hakkında bilgi verin' : 'Please let us know about any dietary restrictions or allergies'}
-              />
             </div>
           )}
 

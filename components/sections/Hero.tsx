@@ -80,13 +80,20 @@ export function Hero() {
           variants={itemVariants}
         >
           <Button variant="primary" onClick={() => {
-            // Scroll to journey section instead of navigating to pricing
+            const pricingElement = document.getElementById('pricing');
+            if (pricingElement) {
+              pricingElement.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}>
+            {t('cta_primary')}
+          </Button>
+          <Button variant="secondary" onClick={() => {
             const journeyElement = document.getElementById('journey');
             if (journeyElement) {
               journeyElement.scrollIntoView({ behavior: 'smooth' });
             }
           }}>
-            {lang === 'tr' ? 'Düğününüzün ilk izlenimi oluştur' : 'Create your wedding\'s first impression'}
+            {t('cta_secondary')}
           </Button>
         </motion.div>
 

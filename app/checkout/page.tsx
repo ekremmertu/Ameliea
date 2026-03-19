@@ -13,61 +13,11 @@ import { showToast } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
 import { hasActivePurchase } from '@/lib/purchase';
 import { PaymentForm, type PaymentFormData } from '@/components/payment/PaymentForm';
-
-type PlanType = 'light' | 'premium';
-
-const plans = {
-  light: {
-    price: '₺1,999',
-    name: { tr: 'Light', en: 'Light' },
-    features: {
-      tr: [
-        'Profesyonel şablon davetiye',
-        'Temel RSVP yönetimi',
-        'Sınırlı düzenleme (3 kez)',
-        '1 ay erişim',
-        'E-posta desteği',
-      ],
-      en: [
-        'Professional template invitation',
-        'Basic RSVP management',
-        'Limited edits (3 times)',
-        '1 month access',
-        'Email support',
-      ],
-    },
-  },
-  premium: {
-    price: '₺3,999',
-    name: { tr: 'Premium', en: 'Premium' },
-    features: {
-      tr: [
-        'Profesyonel şablon davetiye',
-        'Premium RSVP yönetim paneli',
-        'Sınırsız düzenleme',
-        'Video & Müzik entegrasyonu',
-        'Misafirlerimizden Mesajlar',
-        'Gelişmiş analitik',
-        'Öncelikli destek',
-        'Tema özelleştirme',
-      ],
-      en: [
-        'Professional template invitation',
-        'Premium RSVP management dashboard',
-        'Unlimited edits',
-        'Video & Music integration',
-        'Messages from Our Guests',
-        'Advanced analytics',
-        'Priority support',
-        'Theme customization',
-      ],
-    },
-  },
-};
+import { PLAN_PRICING, PLAN_TYPES, UPSELL_COPY, type PlanType } from '@/lib/constants';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
   const supabase = createSupabaseBrowserClient();
   
   const [plan, setPlan] = useState<PlanType>('premium');
@@ -77,7 +27,6 @@ export default function CheckoutPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   useEffect(() => {
-    // Get plan from URL params
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const planParam = urlParams.get('plan') as PlanType;
@@ -86,11 +35,9 @@ export default function CheckoutPage() {
       }
     }
 
-    // Check if user is logged in
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
-        // Check if user already has purchase
         hasActivePurchase(user.id).then(setHasPurchase);
       }
     });
@@ -194,7 +141,9 @@ export default function CheckoutPage() {
     }
   };
 
-  const selectedPlan = plans[plan];
+  const selectedPlanData = PLAN_PRICING[plan];
+  const premiumPlanData = PLAN_PRICING[PLAN_TYPES.PREMIUM];
+  const showUpsell = plan === 'light';
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
@@ -215,12 +164,10 @@ export default function CheckoutPage() {
               color: tokens.colors.text.primary,
             }}
           >
-            {lang === 'tr' ? 'Ödeme' : 'Checkout'}
+            {t('checkout_title')}
           </h1>
           <p className="text-center text-lg mb-8" style={{ color: tokens.colors.text.secondary }}>
-            {lang === 'tr' 
-              ? 'Seçtiğiniz planı onaylayın ve ödemeyi tamamlayın'
-              : 'Confirm your selected plan and complete payment'}
+            {t('checkout_subtitle')}
           </p>
 
           {/* Plan Summary */}
@@ -229,17 +176,20 @@ export default function CheckoutPage() {
             borderColor: plan === 'premium' ? 'var(--crimson-base)' : 'var(--gold-base)',
           }}>
             <div className="p-8">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2" style={{ color: tokens.colors.text.primary }}>
-                    {selectedPlan.name[lang]}
+                  <h2 className="text-2xl font-bold mb-1" style={{ color: tokens.colors.text.primary }}>
+                    {selectedPlanData.name[lang]}
                   </h2>
-                  {plan === 'premium' && (
-                    <span className="text-sm px-3 py-1 rounded-full" style={{ 
+                  <p className="text-sm" style={{ color: tokens.colors.text.secondary }}>
+                    {selectedPlanData.tagline[lang]}
+                  </p>
+                  {selectedPlanData.badge && (
+                    <span className="inline-block mt-2 text-sm px-3 py-1 rounded-full" style={{ 
                       backgroundColor: 'var(--gold-base)',
                       color: 'white',
                     }}>
-                      ⭐ {lang === 'tr' ? 'Premium' : 'Premium'}
+                      {selectedPlanData.badge[lang]}
                     </span>
                   )}
                 </div>
@@ -247,29 +197,70 @@ export default function CheckoutPage() {
                   <div className="text-4xl font-bold mb-1" style={{ 
                     color: plan === 'premium' ? 'var(--crimson-base)' : 'var(--gold-base)',
                   }}>
-                    {selectedPlan.price}
+                    {`₺${selectedPlanData.amount.toLocaleString('tr-TR')}`}
                   </div>
                   <p className="text-sm" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' ? 'Tek seferlik ödeme' : 'One-time payment'}
+                    {t('pricing_one_time')}
                   </p>
                 </div>
               </div>
 
+              <p className="text-sm mb-6" style={{ color: tokens.colors.text.secondary }}>
+                {selectedPlanData.emotionalHook[lang]}
+              </p>
+
               <div className="border-t pt-6" style={{ borderColor: 'var(--border-base)' }}>
-                <h3 className="text-lg font-semibold mb-4" style={{ color: tokens.colors.text.primary }}>
-                  {lang === 'tr' ? 'Özellikler' : 'Features'}
-                </h3>
                 <ul className="space-y-3">
-                  {selectedPlan.features[lang].map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <span className="text-lg mt-0.5">✓</span>
-                      <span style={{ color: tokens.colors.text.secondary }}>{feature}</span>
-                    </li>
-                  ))}
+                  {selectedPlanData.features[lang].map((feature, idx) => {
+                    const isPremiumOnly = selectedPlanData.premiumOnlyFeatures[lang].includes(feature);
+                    return (
+                      <li key={idx} className="flex items-start gap-3">
+                        <span className="text-base mt-0.5" style={{ color: isPremiumOnly ? 'var(--gold-base)' : 'inherit' }}>
+                          {isPremiumOnly ? '★' : '✓'}
+                        </span>
+                        <span className="text-sm" style={{ color: tokens.colors.text.secondary }}>{feature}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
           </div>
+
+          {/* Upsell for Light users */}
+          {showUpsell && (
+            <motion.div
+              className="rounded-2xl overflow-hidden border mb-8 p-6"
+              style={{ 
+                backgroundColor: 'rgba(200, 162, 74, 0.04)',
+                borderColor: 'rgba(200, 162, 74, 0.2)',
+              }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1" style={{ color: tokens.colors.text.primary }}>
+                    {t('checkout_upsell_title')}
+                  </h3>
+                  <p className="text-sm" style={{ color: tokens.colors.text.secondary }}>
+                    {t('checkout_upsell_body')}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setPlan('premium');
+                    window.history.replaceState({}, '', '/checkout?plan=premium');
+                  }}
+                  className="whitespace-nowrap"
+                >
+                  {t('checkout_upsell_cta')} — ₺{(premiumPlanData.amount - selectedPlanData.amount).toLocaleString('tr-TR')}
+                </Button>
+              </div>
+            </motion.div>
+          )}
 
           {/* User Info */}
           {user ? (
@@ -328,12 +319,10 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Payment Info */}
+          {/* Trust Message */}
           <div className="mt-8 text-center">
             <p className="text-sm" style={{ color: tokens.colors.text.muted }}>
-              {lang === 'tr' 
-                ? 'Güvenli ödeme. 7/24 destek.'
-                : 'Secure payment. 24/7 support.'}
+              {t('checkout_trust')}
             </p>
           </div>
         </motion.div>

@@ -22,15 +22,16 @@ function createAdminClient() {
 
 const RSVPSubmitSchema = z.object({
   slug: z.string().min(3).max(64),
-  token: z.string().optional(), // Token (if invitation requires it)
+  token: z.string().optional(),
   full_name: z.string().min(2).max(120),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().max(30).optional().or(z.literal('')),
   attendance: z.enum(['yes', 'no', 'maybe']),
   guests_count: z.number().int().min(1).max(20).default(1),
   note: z.string().max(500).optional().or(z.literal('')),
-  selected_events: z.array(z.string()).optional(), // Array of event names
-  website: z.string().optional(), // bot trap
+  love_note_message: z.string().max(1000).optional().or(z.literal('')),
+  selected_events: z.array(z.string()).optional(),
+  website: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -112,13 +113,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Sanitize user input to prevent XSS attacks
     const sanitizedData = sanitizeRsvpData({
       full_name: parsed.data.full_name,
       email: parsed.data.email,
       phone: parsed.data.phone,
       note: parsed.data.note,
     });
+
+    const loveNoteMessage = parsed.data.love_note_message?.trim();
 
     // Insert RSVP - selected_events may not exist in DB yet, so we'll try without it first if it fails
     const insertData: Record<string, unknown> = {
@@ -158,7 +160,6 @@ export async function POST(req: Request) {
           return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, retryError.message);
         }
 
-        // Token'ı "responded" olarak işaretle
         if (guestTokenId) {
           await supabase
             .from('invitation_guests')
@@ -169,13 +170,24 @@ export async function POST(req: Request) {
             .eq('id', guestTokenId);
         }
 
+        if (loveNoteMessage && rsvpRetry?.id) {
+          await supabase.from('love_notes').insert({
+            invitation_id: inv.id,
+            rsvp_id: rsvpRetry.id,
+            guest_name: sanitizedData.full_name,
+            guest_email: sanitizedData.email || null,
+            message: loveNoteMessage,
+          }).then(({ error: lnErr }) => {
+            if (lnErr) console.error('Love note insert failed:', lnErr);
+          });
+        }
+
         return NextResponse.json({ ok: true, rsvp: rsvpRetry }, { status: 201 });
       }
 
       return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error.message);
     }
 
-    // Token'ı "responded" olarak işaretle
     if (guestTokenId) {
       await supabase
         .from('invitation_guests')
@@ -184,6 +196,18 @@ export async function POST(req: Request) {
           responded_at: new Date().toISOString(),
         })
         .eq('id', guestTokenId);
+    }
+
+    if (loveNoteMessage && rsvp?.id) {
+      await supabase.from('love_notes').insert({
+        invitation_id: inv.id,
+        rsvp_id: rsvp.id,
+        guest_name: sanitizedData.full_name,
+        guest_email: sanitizedData.email || null,
+        message: loveNoteMessage,
+      }).then(({ error: lnErr }) => {
+        if (lnErr) console.error('Love note insert failed:', lnErr);
+      });
     }
 
     // Send notifications (async, don't wait)
