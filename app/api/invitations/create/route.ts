@@ -46,7 +46,8 @@ export async function POST(req: Request) {
   // Generate default token if require_token is true
   const defaultToken = parsed.data.require_token ? generateToken() : null;
 
-  const payload = {
+  // Mevcut DB şemasıyla uyumlu payload (eksik kolonlar şema migration sonrası eklenecek)
+  const basePayload = {
     owner_id: userData.user.id,
     slug: parsed.data.slug,
     title: parsed.data.title,
@@ -56,18 +57,36 @@ export async function POST(req: Request) {
     hero_image_url: parsed.data.hero_image_url && parsed.data.hero_image_url !== '' ? parsed.data.hero_image_url : null,
     language: parsed.data.language,
     template_id: parsed.data.template_id || null,
-    theme_id: parsed.data.theme_id,
     is_published: parsed.data.is_published,
-    require_token: parsed.data.require_token,
-    default_token: defaultToken,
-    theme_config: {}, // Tema özel ayarlar için
   };
 
-  const { data, error } = await supabase
+  // Şemada mevcut olabilecek kolonları ayrı tut (varsa gönderilir)
+  const extendedFields: Record<string, unknown> = {};
+  if (parsed.data.theme_id) extendedFields.theme_id = parsed.data.theme_id;
+  if (parsed.data.require_token !== undefined) extendedFields.require_token = parsed.data.require_token;
+  if (defaultToken) extendedFields.default_token = defaultToken;
+  extendedFields.theme_config = {};
+
+  // Önce extended field'lar ile dene, hata alırsa base payload ile tekrar dene
+  const insertData = { ...basePayload, ...extendedFields };
+
+  const firstAttempt = await supabase
     .from('invitations')
-    .insert(payload)
-    .select('id,slug,title,created_at,owner_id,default_token')
+    .insert(insertData)
+    .select('id,slug,title,created_at,owner_id')
     .single();
+
+  // Şema eksikliği nedeniyle hata alındıysa sadece base payload ile dene
+  const { data, error } = (firstAttempt.error && (firstAttempt.error.code === 'PGRST204' || firstAttempt.error.message?.includes('column')))
+    ? await (async () => {
+        console.warn('Extended columns not in schema, retrying with base payload:', firstAttempt.error!.message);
+        return supabase
+          .from('invitations')
+          .insert(basePayload)
+          .select('id,slug,title,created_at,owner_id')
+          .single();
+      })()
+    : firstAttempt;
 
   if (error) {
     console.error('Database error:', error);
@@ -77,7 +96,7 @@ export async function POST(req: Request) {
     return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, error.message);
   }
 
-  // Otomatik token oluştur (eğer isteniyorsa)
+  // Otomatik token oluştur (eğer isteniyorsa ve tablo destekliyorsa)
   if (parsed.data.auto_generate_tokens && parsed.data.auto_generate_tokens > 0) {
     const tokensToInsert = Array.from({ length: parsed.data.auto_generate_tokens }, () => ({
       invitation_id: data.id,

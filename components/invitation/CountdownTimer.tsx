@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
 
 interface CountdownTimerProps {
-  weddingDate: string; // YYYY-MM-DD format
-  weddingTime: string; // HH:mm format
+  weddingDate: string;
+  weddingTime: string;
   themeColor?: string;
-  minDays?: number; // Minimum gün sayısı (demo/tanıtım için)
+  minDays?: number;
 }
 
 interface TimeLeft {
@@ -19,9 +19,58 @@ interface TimeLeft {
   seconds: number;
 }
 
+function FlipDigit({ value, label, themeColor }: { value: number; label: string; themeColor: string }) {
+  return (
+    <motion.div
+      key={`${label}-${value}`}
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col items-center"
+    >
+      <div
+        className="relative w-[72px] h-[80px] md:w-[90px] md:h-[100px] rounded-2xl flex items-center justify-center overflow-hidden"
+        style={{
+          backgroundColor: `${themeColor}10`,
+          border: `1.5px solid ${themeColor}25`,
+          boxShadow: `0 4px 20px ${themeColor}08`,
+        }}
+      >
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{ backgroundColor: themeColor }}
+        />
+        <span
+          className="relative text-3xl md:text-4xl font-bold tabular-nums"
+          style={{
+            fontFamily: tokens.typography.fontFamily.serif.join(', '),
+            color: tokens.colors.text.primary,
+          }}
+        >
+          {value.toString().padStart(2, '0')}
+        </span>
+      </div>
+      <span
+        className="mt-2 text-[10px] md:text-xs font-semibold uppercase tracking-[0.15em]"
+        style={{ color: tokens.colors.text.secondary }}
+      >
+        {label}
+      </span>
+    </motion.div>
+  );
+}
+
+function Separator({ themeColor }: { themeColor: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 pt-4 md:pt-5">
+      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `${themeColor}50` }} />
+      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `${themeColor}50` }} />
+    </div>
+  );
+}
 
 export function CountdownTimer({ weddingDate, weddingTime, themeColor = '#c8a24a', minDays }: CountdownTimerProps) {
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const secondsRef = useRef<number | null>(null);
@@ -35,8 +84,7 @@ export function CountdownTimer({ weddingDate, weddingTime, themeColor = '#c8a24a
     const calculateTimeLeft = () => {
       const now = new Date();
       const weddingDateTime = new Date(`${weddingDate}T${weddingTime}:00`);
-      
-      // Check if wedding date is in the past
+
       if (weddingDateTime <= now) {
         setIsExpired(true);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -51,7 +99,6 @@ export function CountdownTimer({ weddingDate, weddingTime, themeColor = '#c8a24a
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-      // Eğer minDays belirtilmişse ve gün sayısı minDays'den azsa, minDays'e çıkar
       if (minDays !== undefined && days < minDays) {
         days = minDays;
       }
@@ -60,191 +107,66 @@ export function CountdownTimer({ weddingDate, weddingTime, themeColor = '#c8a24a
       setTimeLeft({ days, hours, minutes, seconds });
     };
 
-    // Calculate immediately
     calculateTimeLeft();
-
-    // Update every second
     const interval = setInterval(calculateTimeLeft, 1000);
-
     return () => clearInterval(interval);
-  }, [weddingDate, weddingTime]);
+  }, [weddingDate, weddingTime, minDays]);
 
-  if (!weddingDate || !weddingTime || !timeLeft) {
-    return null;
-  }
+  if (!weddingDate || !weddingTime || !timeLeft) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="mt-6 p-6 rounded-xl"
-      style={{ 
-        backgroundColor: 'var(--bg-panel)',
-        border: '1px solid rgba(200, 162, 74, 0.2)',
-      }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.7 }}
+      className="py-8"
     >
-      <div className="text-center mb-6">
-        <h3 
-          className="text-2xl md:text-3xl font-bold mb-2"
+      {/* Header */}
+      <div className="text-center mb-8">
+        <p
+          className="text-xs font-semibold uppercase tracking-[0.2em] mb-3"
+          style={{ color: themeColor }}
+        >
+          {t('invitation_countdown')}
+        </p>
+        <h3
+          className="text-2xl md:text-3xl font-bold"
           style={{
             fontFamily: tokens.typography.fontFamily.serif.join(', '),
             color: tokens.colors.text.primary,
+            fontStyle: 'italic',
           }}
         >
-          {lang === 'tr' ? 'Geri Sayım' : 'Countdown'}
+          {t('invitation_countdown_subtitle')}
         </h3>
-        <p 
-          className="text-sm md:text-base"
-          style={{ color: tokens.colors.text.secondary }}
-        >
-          {lang === 'tr' 
-            ? 'Hayatımızın en özel gününe kadar'
-            : 'Until the most special day of our lives'}
-        </p>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 md:gap-4">
-        {/* Days */}
-        <motion.div
-          key={`days-${timeLeft.days}`}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="p-4 md:p-6 rounded-xl text-center relative overflow-hidden"
-          style={{
-            backgroundColor: 'rgba(200, 162, 74, 0.1)',
-            border: '1px solid rgba(200, 162, 74, 0.3)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-5" style={{ background: 'var(--gold-base)' }} />
-          <div className="relative">
-            <div 
-              className="text-3xl md:text-4xl font-bold mb-2"
-              style={{ 
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                color: tokens.colors.text.primary,
-              }}
-            >
-              {timeLeft.days}
-            </div>
-            <div 
-              className="text-xs md:text-sm font-medium uppercase tracking-wider"
-              style={{ color: tokens.colors.text.secondary }}
-            >
-              {lang === 'tr' ? 'Gün' : 'Days'}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Hours */}
-        <motion.div
-          key={`hours-${timeLeft.hours}`}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="p-4 md:p-6 rounded-xl text-center relative overflow-hidden"
-          style={{
-            backgroundColor: 'rgba(200, 162, 74, 0.1)',
-            border: '1px solid rgba(200, 162, 74, 0.3)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-5" style={{ background: 'var(--gold-base)' }} />
-          <div className="relative">
-            <div 
-              className="text-3xl md:text-4xl font-bold mb-2"
-              style={{ 
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                color: tokens.colors.text.primary,
-              }}
-            >
-              {timeLeft.hours}
-            </div>
-            <div 
-              className="text-xs md:text-sm font-medium uppercase tracking-wider"
-              style={{ color: tokens.colors.text.secondary }}
-            >
-              {lang === 'tr' ? 'Saat' : 'Hours'}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Minutes */}
-        <motion.div
-          key={`minutes-${timeLeft.minutes}`}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="p-4 md:p-6 rounded-xl text-center relative overflow-hidden"
-          style={{
-            backgroundColor: 'rgba(200, 162, 74, 0.1)',
-            border: '1px solid rgba(200, 162, 74, 0.3)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-5" style={{ background: 'var(--gold-base)' }} />
-          <div className="relative">
-            <div 
-              className="text-3xl md:text-4xl font-bold mb-2"
-              style={{ 
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                color: tokens.colors.text.primary,
-              }}
-            >
-              {timeLeft.minutes}
-            </div>
-            <div 
-              className="text-xs md:text-sm font-medium uppercase tracking-wider"
-              style={{ color: tokens.colors.text.secondary }}
-            >
-              {lang === 'tr' ? 'Dakika' : 'Minutes'}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Seconds */}
-        <motion.div
-          key={`seconds-${timeLeft.seconds}`}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="p-4 md:p-6 rounded-xl text-center relative overflow-hidden"
-          style={{
-            backgroundColor: 'rgba(200, 162, 74, 0.1)',
-            border: '1px solid rgba(200, 162, 74, 0.3)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-5" style={{ background: 'var(--gold-base)' }} />
-          <div className="relative">
-            <div 
-              className="text-3xl md:text-4xl font-bold mb-2"
-              style={{ 
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                color: tokens.colors.text.primary,
-              }}
-            >
-              {timeLeft.seconds}
-            </div>
-            <div 
-              className="text-xs md:text-sm font-medium uppercase tracking-wider"
-              style={{ color: tokens.colors.text.secondary }}
-            >
-              {lang === 'tr' ? 'Saniye' : 'Seconds'}
-            </div>
-          </div>
-        </motion.div>
+      {/* Timer */}
+      <div className="flex items-start justify-center gap-2 md:gap-4">
+        <FlipDigit value={timeLeft.days} label={t('invitation_countdown_days')} themeColor={themeColor} />
+        <Separator themeColor={themeColor} />
+        <FlipDigit value={timeLeft.hours} label={t('invitation_countdown_hours')} themeColor={themeColor} />
+        <Separator themeColor={themeColor} />
+        <FlipDigit value={timeLeft.minutes} label={t('invitation_countdown_minutes')} themeColor={themeColor} />
+        <Separator themeColor={themeColor} />
+        <FlipDigit value={timeLeft.seconds} label={t('invitation_countdown_seconds')} themeColor={themeColor} />
       </div>
 
       {isExpired && (
-        <p 
-          className="text-center mt-4 text-sm"
-          style={{ color: tokens.colors.text.muted }}
+        <motion.p
+          className="text-center mt-6 text-base font-medium"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            color: themeColor,
+            fontFamily: tokens.typography.fontFamily.serif.join(', '),
+            fontStyle: 'italic',
+          }}
         >
-          {lang === 'tr' 
-            ? 'Düğün tarihi geçmiş'
-            : 'Wedding date has passed'}
-        </p>
+          {t('invitation_countdown_expired')}
+        </motion.p>
       )}
     </motion.div>
   );
 }
-

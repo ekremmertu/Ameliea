@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https://*.supabase.co https://api.iyzipay.com https://sandbox-api.iyzipay.com wss://*.supabase.co https://vercel.live https://va.vercel-scripts.com",
-              "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.google.com",
+              "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.google.com https://maps.google.com",
               "media-src 'self' https: blob:",
               "object-src 'none'",
               "base-uri 'self'",

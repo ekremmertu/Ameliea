@@ -32,24 +32,23 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
   const { t, lang } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     attending: true,
     guests: 1,
+    foodPreference: '' as string,
     dietaryRestrictions: '',
     message: '',
-    loveNote: '', // Message to the couple (bride and groom)
-    selectedEvents: [] as string[], // Array of event names user wants to attend
-    guestAnswers: {} as Record<string, string>, // question_id -> answer
+    selectedEvents: [] as string[],
+    guestAnswers: {} as Record<string, string>,
+    needsTransportation: false,
+    needsAccommodation: false,
   });
   const [guestQuestions, setGuestQuestions] = useState<GuestQuestion[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  /** API validation errors: field name -> list of messages (from VALIDATION_ERROR details.fieldErrors) */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
-  // Fetch guest questions
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -80,11 +79,16 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
         body: JSON.stringify({
           slug: invitationData.slug,
           full_name: formData.name,
-          email: formData.email,
           phone: formData.phone,
           attendance: formData.attending ? 'yes' : 'no',
           guests_count: formData.guests,
-          note: formData.message || formData.dietaryRestrictions ? `${formData.dietaryRestrictions ? `Diyet: ${formData.dietaryRestrictions}\n` : ''}${formData.message || ''}`.trim() : undefined,
+          note: [
+            formData.foodPreference ? `${lang === 'tr' ? 'Yemek' : 'Food'}: ${formData.foodPreference}` : '',
+            formData.dietaryRestrictions ? `${lang === 'tr' ? 'Diyet' : 'Dietary'}: ${formData.dietaryRestrictions}` : '',
+            formData.needsTransportation ? (lang === 'tr' ? 'Ulaşım gerekiyor' : 'Transportation needed') : '',
+            formData.needsAccommodation ? (lang === 'tr' ? 'Konaklama gerekiyor' : 'Accommodation needed') : '',
+            formData.message || '',
+          ].filter(Boolean).join('\n').trim() || undefined,
           selected_events: formData.selectedEvents.length > 0 ? formData.selectedEvents : undefined,
         }),
       });
@@ -107,7 +111,6 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
       const rsvpData = await rsvpResponse.json();
       const rsvpId = rsvpData.rsvp?.id;
 
-      // Submit guest answers if there are questions and answers
       if (rsvpId && guestQuestions.length > 0 && Object.keys(formData.guestAnswers).length > 0) {
         const answers = guestQuestions
           .filter(q => formData.guestAnswers[q.id]?.trim())
@@ -128,32 +131,19 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
         }
       }
 
-      // Submit love note if provided
-      if (rsvpId && formData.loveNote && formData.loveNote.trim()) {
-        await fetch(`/api/invitations/${invitationData.slug}/love-notes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            rsvp_id: rsvpId,
-            guest_name: formData.name,
-            guest_email: formData.email || undefined,
-            message: formData.loveNote.trim(),
-          }),
-        });
-      }
-
       setSubmitted(true);
       setFormData({
         name: '',
-        email: '',
         phone: '',
         attending: true,
         guests: 1,
+        foodPreference: '',
         dietaryRestrictions: '',
         message: '',
-        loveNote: '',
         selectedEvents: [],
         guestAnswers: {},
+        needsTransportation: false,
+        needsAccommodation: false,
       });
     } catch (error) {
       logger.error('Error submitting RSVP:', error);
@@ -234,8 +224,18 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
+            <div
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium uppercase tracking-widest mb-6"
+              style={{
+                backgroundColor: `${invitationData.theme.primaryColor}15`,
+                color: invitationData.theme.primaryColor,
+                border: `1px solid ${invitationData.theme.primaryColor}30`,
+              }}
+            >
+              RSVP
+            </div>
             <h2
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="text-4xl md:text-5xl font-bold mb-3"
               style={{
                 fontFamily: tokens.typography.fontFamily.serif.join(', '),
                 color: tokens.colors.text.primary,
@@ -243,12 +243,20 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             >
               {lang === 'tr' ? 'Katılım' : 'RSVP'}
             </h2>
+            <p
+              className="text-lg mb-2"
+              style={{
+                color: tokens.colors.text.secondary,
+                fontFamily: tokens.typography.fontFamily.serif.join(', '),
+                fontStyle: 'italic',
+              }}
+            >
+              {t('invitation_rsvp_we_hope')}
+            </p>
             {invitationData.rsvpDeadline && (
               <p
-                className="text-lg"
-                style={{
-                  color: tokens.colors.text.secondary,
-                }}
+                className="text-sm"
+                style={{ color: tokens.colors.text.muted }}
               >
                 {t('invitation_rsvp_deadline')} {new Date(invitationData.rsvpDeadline).toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-US')}
               </p>
@@ -291,37 +299,6 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             {fieldErrors.full_name?.length ? (
               <p id="rsvp-name-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
                 {fieldErrors.full_name[0]}
-              </p>
-            ) : null}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label htmlFor="rsvp-email" className="block mb-2 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
-              {t('invitation_rsvp_email')}
-            </label>
-            <input
-              id="rsvp-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
-              style={{
-                backgroundColor: 'var(--bg-panel-strong)',
-                borderColor: fieldErrors.email ? 'var(--crimson-base)' : 'var(--border-base)',
-                minHeight: '44px',
-                fontSize: '16px',
-              }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = fieldErrors.email ? 'var(--crimson-base)' : 'var(--border-base)'; }}
-              aria-invalid={!!fieldErrors.email}
-              aria-describedby={fieldErrors.email ? 'rsvp-email-error' : undefined}
-            />
-            {fieldErrors.email?.length ? (
-              <p id="rsvp-email-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
-                {fieldErrors.email[0]}
               </p>
             ) : null}
           </div>
@@ -391,42 +368,96 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             </div>
           </div>
 
-          {/* Guests */}
+          {/* Guests - +/- counter */}
           {formData.attending && (
             <div>
-              <label htmlFor="rsvp-guests" className="block mb-2 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
+              <label className="block mb-2 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
                 {t('invitation_rsvp_guests')} *
               </label>
-              <input
-                id="rsvp-guests"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                max="10"
-                required={formData.attending}
-                value={formData.guests}
-                onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) || 1 })}
-                className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors text-base"
-                style={{
-                  backgroundColor: 'var(--bg-panel-strong)',
-                  borderColor: fieldErrors.guests_count ? 'var(--crimson-base)' : 'var(--border-base)',
-                  minHeight: '44px',
-                  fontSize: '16px',
-                }}
-                aria-invalid={!!fieldErrors.guests_count}
-                aria-describedby={fieldErrors.guests_count ? 'rsvp-guests-error' : undefined}
-                onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = fieldErrors.guests_count ? 'var(--crimson-base)' : 'var(--border-base)'; }}
-              />
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, guests: Math.max(1, formData.guests - 1) })}
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    backgroundColor: 'var(--bg-panel-strong)',
+                    border: `2px solid ${invitationData.theme.primaryColor}40`,
+                    color: invitationData.theme.primaryColor,
+                  }}
+                  aria-label={lang === 'tr' ? 'Misafir azalt' : 'Decrease guests'}
+                >
+                  −
+                </button>
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold"
+                  style={{
+                    backgroundColor: `${invitationData.theme.primaryColor}10`,
+                    border: `2px solid ${invitationData.theme.primaryColor}30`,
+                    color: tokens.colors.text.primary,
+                    fontFamily: tokens.typography.fontFamily.serif.join(', '),
+                  }}
+                >
+                  {formData.guests}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, guests: Math.min(10, formData.guests + 1) })}
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    backgroundColor: invitationData.theme.primaryColor,
+                    color: 'white',
+                  }}
+                  aria-label={lang === 'tr' ? 'Misafir arttır' : 'Increase guests'}
+                >
+                  +
+                </button>
+              </div>
               {fieldErrors.guests_count?.length ? (
-                <p id="rsvp-guests-error" className="mt-1 text-sm" style={{ color: 'var(--crimson-base)' }} role="alert">
+                <p className="mt-2 text-sm text-center" style={{ color: 'var(--crimson-base)' }} role="alert">
                   {fieldErrors.guests_count[0]}
                 </p>
               ) : null}
             </div>
           )}
 
-          {/* Event Selection - Only show if scheduleItems exist and user is attending */}
+          {/* Food Preference */}
+          {formData.attending && (
+            <div>
+              <label className="block mb-3 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
+                {t('invitation_rsvp_food_preference')}
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: 'vegetarian', label: t('invitation_rsvp_food_veg') },
+                  { value: 'non-vegetarian', label: t('invitation_rsvp_food_nonveg') },
+                  { value: 'vegan', label: t('invitation_rsvp_food_vegan') },
+                  { value: '', label: t('invitation_rsvp_food_none') },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, foodPreference: option.value })}
+                    className="px-4 py-3 rounded-xl border text-sm font-medium transition-all min-h-[44px]"
+                    style={{
+                      backgroundColor: formData.foodPreference === option.value
+                        ? `${invitationData.theme.primaryColor}15`
+                        : 'var(--bg-panel-strong)',
+                      borderColor: formData.foodPreference === option.value
+                        ? invitationData.theme.primaryColor
+                        : 'var(--border-base)',
+                      color: formData.foodPreference === option.value
+                        ? invitationData.theme.primaryColor
+                        : tokens.colors.text.primary,
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Event Selection */}
           {formData.attending && invitationData.scheduleItems && invitationData.scheduleItems.length > 0 && (
             <div>
               <label className="block mb-3 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
@@ -515,6 +546,67 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             </div>
           )}
 
+          {/* Additional Services */}
+          {formData.attending && (
+            <div>
+              <label className="block mb-3 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
+                {t('invitation_rsvp_additional_services')}
+              </label>
+              <div className="space-y-3">
+                <label
+                  className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+                  style={{
+                    backgroundColor: formData.needsTransportation
+                      ? `${invitationData.theme.primaryColor}10`
+                      : 'var(--bg-panel-strong)',
+                    borderColor: formData.needsTransportation
+                      ? invitationData.theme.primaryColor
+                      : 'var(--border-base)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.needsTransportation}
+                    onChange={(e) => setFormData({ ...formData, needsTransportation: e.target.checked })}
+                    className="w-5 h-5 rounded"
+                    style={{ accentColor: invitationData.theme.primaryColor }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🚗</span>
+                    <span className="text-sm font-medium" style={{ color: tokens.colors.text.primary }}>
+                      {t('invitation_rsvp_transportation')}
+                    </span>
+                  </div>
+                </label>
+                <label
+                  className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+                  style={{
+                    backgroundColor: formData.needsAccommodation
+                      ? `${invitationData.theme.primaryColor}10`
+                      : 'var(--bg-panel-strong)',
+                    borderColor: formData.needsAccommodation
+                      ? invitationData.theme.primaryColor
+                      : 'var(--border-base)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.needsAccommodation}
+                    onChange={(e) => setFormData({ ...formData, needsAccommodation: e.target.checked })}
+                    className="w-5 h-5 rounded"
+                    style={{ accentColor: invitationData.theme.primaryColor }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🏨</span>
+                    <span className="text-sm font-medium" style={{ color: tokens.colors.text.primary }}>
+                      {t('invitation_rsvp_accommodation')}
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Message */}
           <div>
             <label htmlFor="rsvp-message" className="block mb-2 text-sm font-medium" style={{ color: tokens.colors.text.secondary }}>
@@ -539,7 +631,7 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             />
           </div>
 
-          {/* Guest Questions */}
+          {/* Guest Questions — only shown if wedding owner added questions */}
           {!loadingQuestions && guestQuestions.length > 0 && (
             <div className="space-y-4 pt-4 border-t" style={{ borderColor: 'var(--border-base)' }}>
               <h3
@@ -551,7 +643,7 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
               >
                 {lang === 'tr' ? 'Sorular' : 'Questions'}
               </h3>
-              {guestQuestions.map((question, index) => (
+              {guestQuestions.map((question) => (
                 <div key={question.id}>
                   <label
                     htmlFor={`guest-question-${question.id}`}
@@ -590,45 +682,6 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
             </div>
           )}
 
-          {/* Love Note - Message to the Couple */}
-          <div className="pt-4 border-t" style={{ borderColor: 'var(--border-base)' }}>
-            <h3
-              className="text-xl font-semibold mb-4"
-              style={{
-                fontFamily: tokens.typography.fontFamily.serif.join(', '),
-                color: tokens.colors.text.primary,
-              }}
-            >
-              {lang === 'tr' ? '💕 Gelin ve Damat\'a Mesaj' : '💕 Message to the Couple'}
-            </h3>
-            <p
-              className="text-sm mb-4"
-              style={{ color: tokens.colors.text.secondary }}
-            >
-              {lang === 'tr' 
-                ? 'Gelin ve damat için özel bir mesaj yazabilirsiniz. Bu mesaj düğün sahipleri tarafından görülebilir.'
-                : 'You can write a special message for the bride and groom. This message will be visible to the wedding hosts.'}
-            </p>
-            <textarea
-              id="love-note"
-              rows={5}
-              value={formData.loveNote}
-              onChange={(e) => setFormData({ ...formData, loveNote: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors resize-none text-base"
-              style={{
-                backgroundColor: 'var(--bg-panel-strong)',
-                borderColor: 'var(--border-base)',
-                minHeight: '120px',
-                fontSize: '16px',
-              }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = invitationData.theme.primaryColor; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-base)'; }}
-              placeholder={lang === 'tr' 
-                ? 'Gelin ve damat için özel mesajınızı buraya yazın...'
-                : 'Write your special message for the bride and groom here...'}
-            />
-          </div>
-
           {/* Submit Button */}
           <button
             type="submit"
@@ -647,4 +700,3 @@ export function InvitationRSVP({ invitationData }: InvitationRSVPProps) {
     </section>
   );
 }
-

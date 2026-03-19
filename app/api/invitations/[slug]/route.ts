@@ -157,8 +157,12 @@ export async function GET(
     const { data: { user } } = await supabase.auth.getUser();
     const isOwner = !!(user && invitation.owner_id && invitation.owner_id === user.id);
 
-    // Get theme configuration
-    const themeId = (invitation.theme_id || 'elegant') as ThemeId;
+    // Tema: theme_id kolonu yoksa template_id'den türet
+    const themeId = (
+      invitation.theme_id ||
+      (invitation.template_id ? require('@/lib/theme-assets').getThemeAssetsByStyleKey(invitation.template_id)?.themeId : null) ||
+      'elegant'
+    ) as ThemeId;
     const themeConfig = getTheme(themeId);
 
     // Return formatted response (compatible with existing frontend)

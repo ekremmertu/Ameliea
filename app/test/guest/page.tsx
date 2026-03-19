@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { InvitationHero } from '@/components/invitation/InvitationHero';
 import { InvitationDetails } from '@/components/invitation/InvitationDetails';
@@ -56,7 +55,7 @@ const MOCK_INVITATION = {
 
 export default function TestGuestPage() {
   const { lang } = useI18n();
-  const [showIntro, setShowIntro] = useState(true);
+
   const invitationData = MOCK_INVITATION;
 
   return (
@@ -77,28 +76,24 @@ export default function TestGuestPage() {
         {lang === 'tr' ? '🧪 Test — Katılımcı görünümü' : '🧪 Test — Guest view'}
       </div>
 
-      {showIntro && (
-        <GuestOpeningFlow
-          data={{
-            coupleName: invitationData.coupleName,
-            groomName: invitationData.groomName,
-            brideName: invitationData.brideName,
-            weddingDate: invitationData.weddingDate,
-            weddingTime: invitationData.weddingTime,
-            venueName: invitationData.venueName,
-            venueAddress: invitationData.venueAddress,
-            personalMessage: invitationData.personalMessage,
-            themeId: invitationData.themeId,
-            theme: invitationData.theme,
-          }}
-          onComplete={() => setShowIntro(false)}
-        />
-      )}
+      <GuestOpeningFlow
+        data={{
+          coupleName: invitationData.coupleName,
+          groomName: invitationData.groomName,
+          brideName: invitationData.brideName,
+          weddingDate: invitationData.weddingDate,
+          weddingTime: invitationData.weddingTime,
+          venueName: invitationData.venueName,
+          venueAddress: invitationData.venueAddress,
+          personalMessage: invitationData.personalMessage,
+          themeId: invitationData.themeId,
+          theme: invitationData.theme,
+        }}
+      />
 
-      {!showIntro && (
-        <main className="min-h-screen">
-          <BackButton href="/" themeColor={invitationData.theme.primaryColor} />
-          <InvitationHero invitationData={invitationData} />
+      <main className="min-h-screen">
+        <BackButton href="/" themeColor={invitationData.theme.primaryColor} />
+        <InvitationHero invitationData={invitationData} />
           <InvitationDetails invitationData={invitationData} />
           {invitationData.features?.enableVideo !== false && invitationData.videoUrl && (
             <InvitationVideo
@@ -131,7 +126,6 @@ export default function TestGuestPage() {
             )}
           <InvitationFooter invitationData={invitationData} />
         </main>
-      )}
     </div>
   );
 }

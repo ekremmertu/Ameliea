@@ -6,10 +6,19 @@
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { sanitizeRsvpData } from '@/lib/sanitize';
 import { sendRSVPConfirmation, sendRSVPNotificationToOwner } from '@/lib/notifications';
 import { apiError, validationError, parseJsonBodyOrError, ErrorCodes } from '@/lib/api-response';
+
+/** RSVP için RLS'yi bypass eden admin client (service role) */
+function createAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 const RSVPSubmitSchema = z.object({
   slug: z.string().min(3).max(64),
@@ -26,7 +35,7 @@ const RSVPSubmitSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createAdminClient();
 
     const parsedBody = await parseJsonBodyOrError(req);
     if (parsedBody.response) return parsedBody.response;
@@ -42,19 +51,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true }); // silently accept bots
     }
 
-    // Find invitation by slug
-    const { data: inv, error: invErr } = await supabase
+    // Find invitation by slug (require_token ve default_token kolonları DB'de olmayabilir, önce temel kolonlarla dene)
+    let inv: Record<string, unknown> | null = null;
+    let invErr: { message?: string; code?: string } | null = null;
+    
+    const fullResult = await supabase
       .from('invitations')
       .select('id,is_published,require_token,default_token,title,host_names,owner_id')
       .eq('slug', parsed.data.slug)
       .maybeSingle();
 
-    if (invErr) {
-      console.error('Error finding invitation:', invErr);
-      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, invErr.message);
+    if (fullResult.error && (fullResult.error.code === 'PGRST204' || fullResult.error.message?.includes('column'))) {
+      // Eksik kolonlar var, temel sorgu ile dene
+      const baseResult = await supabase
+        .from('invitations')
+        .select('id,is_published,title,host_names,owner_id')
+        .eq('slug', parsed.data.slug)
+        .maybeSingle();
+      inv = baseResult.data as Record<string, unknown> | null;
+      invErr = baseResult.error as { message?: string; code?: string } | null;
+    } else {
+      inv = fullResult.data as Record<string, unknown> | null;
+      invErr = fullResult.error as { message?: string; code?: string } | null;
     }
 
-    if (!inv || !inv.is_published) {
+    if (invErr) {
+      console.error('Error finding invitation:', invErr);
+      return apiError(ErrorCodes.INTERNAL_SERVER_ERROR, 500, undefined, (invErr as { message?: string }).message);
+    }
+
+    if (!inv || inv.is_published === false) {
       return apiError(ErrorCodes.NOT_FOUND, 404, 'Invitation not found');
     }
 
@@ -165,18 +191,18 @@ export async function POST(req: Request) {
       sendRSVPConfirmation(
         sanitizedData.email,
         sanitizedData.full_name,
-        inv.title || inv.host_names || 'Wedding',
+        String(inv.title || inv.host_names || 'Wedding'),
         parsed.data.attendance
       ).catch(err => console.error('RSVP confirmation email failed:', err));
     }
 
     // Notify invitation owner
-    const { data: owner } = await supabase.auth.admin.getUserById(inv.owner_id);
+    const { data: owner } = await supabase.auth.admin.getUserById(inv.owner_id as string);
     if (owner?.user?.email) {
       sendRSVPNotificationToOwner(
         owner.user.email,
         sanitizedData.full_name,
-        inv.title || inv.host_names || 'Wedding',
+        String(inv.title || inv.host_names || 'Wedding'),
         parsed.data.attendance
       ).catch(err => console.error('Owner notification failed:', err));
     }
