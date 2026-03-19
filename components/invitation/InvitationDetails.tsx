@@ -3,13 +3,10 @@
 import { motion } from 'framer-motion';
 import { tokens } from '@/lib/design-tokens';
 import { useI18n } from '@/components/providers/I18nProvider';
-import { ImageSlider } from '@/components/ui/ImageSlider';
-
 interface InvitationData {
   venueName: string;
   venueAddress: string;
   venueMapUrl?: string;
-  venuePhotos?: string[];
   weddingDate: string;
   weddingTime: string;
   dressCode?: string;
@@ -128,13 +125,6 @@ export function InvitationDetails({ invitationData }: InvitationDetailsProps) {
                 {invitationData.venueAddress}
               </p>
             </div>
-
-            {/* Venue Photos Slider */}
-            {invitationData.venuePhotos && invitationData.venuePhotos.length > 0 && (
-              <div className="mt-8">
-                <ImageSlider images={invitationData.venuePhotos} themeColor={invitationData.theme.primaryColor} />
-              </div>
-            )}
 
             {/* Map */}
             {(invitationData.venueAddress || invitationData.venueMapUrl) && (

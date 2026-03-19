@@ -27,7 +27,6 @@ const CreateInvitationSchema = z.object({
     venueName: z.string().max(200).optional(),
     venueAddress: z.string().max(300).optional(),
     venueMapUrl: z.string().max(500).optional(),
-    venuePhotos: z.array(z.string()).max(3).optional(),
     personalMessage: z.string().max(300).optional(),
     musicUrl: z.string().max(500).optional(),
     videoUrl: z.string().max(500).optional(),

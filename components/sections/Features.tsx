@@ -5,7 +5,6 @@ import { useI18n } from '@/components/providers/I18nProvider';
 import { tokens } from '@/lib/design-tokens';
 import { CountdownTimer } from '@/components/invitation/CountdownTimer';
 import { ScheduleTimeline } from '@/components/invitation/ScheduleTimeline';
-import { ImageSlider } from '@/components/ui/ImageSlider';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -44,14 +43,6 @@ export function Features() {
     { time: '15:30', event: lang === 'tr' ? 'Kokteyl' : 'Cocktail', description: lang === 'tr' ? 'Kokteyl saati' : 'Cocktail hour', icon: '🍷' },
     { time: '17:00', event: lang === 'tr' ? 'Yemek' : 'Dinner', description: lang === 'tr' ? 'Akşam yemeği' : 'Evening dinner', icon: '🍽️' },
     { time: '20:00', event: lang === 'tr' ? 'Dans' : 'Party', description: lang === 'tr' ? 'Dans ve eğlence' : 'Dancing and celebration', icon: '🎵' },
-  ];
-
-  // Demo venue photos: 2 kır düğünü (İtalya - Tuscany) + 1 kapalı salon
-  // İtalya kır düğünü görselleri: Tuscany bağları, villa, açık alan düğün yeri
-  const demoVenuePhotos = [
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80', // Kır düğünü 1 - Tuscany bağlarında düğün (vineyard wedding)
-    'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=800&q=80', // Kır düğünü 2 - Tuscany villa açık alan düğün yeri (outdoor wedding)
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80', // Kapalı salon - İç mekan (ballroom/wedding hall)
   ];
 
   return (
@@ -134,27 +125,6 @@ export function Features() {
                 <ScheduleTimeline
                   scheduleItems={demoScheduleItems}
                 />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Venue Photos Slider Feature */}
-          <motion.div variants={itemVariants} className="p-8 rounded-3xl" style={{ backgroundColor: 'var(--bg-panel-strong)' }}>
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div>
-                <h3 className="text-3xl font-bold mb-4" style={{ color: tokens.colors.text.primary }}>
-                  {lang === 'tr' ? '📸 Mekan Fotoğrafları' : '📸 Venue Photos'}
-                </h3>
-                <p className="text-lg mb-6" style={{ color: tokens.colors.text.secondary }}>
-                  {lang === 'tr' 
-                    ? 'Mekanınızın atmosferini hissettirin. Misafirleriniz daha gelmeden heyecanlanmaya başlasın.'
-                    : 'Let your guests feel the atmosphere before they arrive. The excitement starts now.'}
-                </p>
-              </div>
-              <div className="flex justify-center">
-                <div className="w-full max-w-md">
-                  <ImageSlider images={demoVenuePhotos} />
-                </div>
               </div>
             </div>
           </motion.div>

@@ -8,18 +8,18 @@ import { Card } from '@/components/ui/Card';
 
 const testimonials = {
   en: [
-    { quote: '"It felt like a handwritten letter—only modern."', who: '— A & E' },
-    { quote: '"Elegant, calm, and surprisingly easy to manage."', who: '— L & R' },
-    { quote: '"The RSVP clarity saved us so much time."', who: '— S & M' },
-    { quote: '"Every detail was crafted with such intention and care."', who: '— M & J' },
-    { quote: '"Our guests were in awe of the beautiful invitation."', who: '— K & D' },
+    { quote: '"We set it up in one evening. Three days later, we had 80 confirmed RSVPs—no chasing anyone."', who: '— A & E' },
+    { quote: '"Our parents kept asking how we made something this polished. We just picked a theme."', who: '— L & R' },
+    { quote: '"I dreaded managing guest lists. The dashboard handled everything—I just checked in once a day."', who: '— S & M' },
+    { quote: '"Guests replied within minutes. Some even sent us love notes through the invitation."', who: '— M & J' },
+    { quote: '"We skipped the printing chaos entirely. Best decision of our wedding planning."', who: '— K & D' },
   ],
   tr: [
-    { quote: '"Elden yazılmış bir mektup gibi hissettirdi—sadece modern."', who: '— A & E' },
-    { quote: '"Zarif, sakin ve şaşırtıcı derecede kolay yönetilebilir."', who: '— L & R' },
-    { quote: '"RSVP netliği bize çok zaman kazandırdı."', who: '— S & M' },
-    { quote: '"Her detay niyetle ve özenle tasarlanmıştı."', who: '— M & J' },
-    { quote: '"Misafirlerimiz güzel davetiyeden büyülendiler."', who: '— K & D' },
+    { quote: '"Bir akşamda kurduk. Üç gün sonra elimizde 80 onaylı RSVP vardı—kimsenin peşinden koşmadık."', who: '— A & E' },
+    { quote: '"Ailemiz bu kadar profesyonel bir şeyi nasıl yaptığımızı sormaya devam etti. Biz sadece tema seçtik."', who: '— L & R' },
+    { quote: '"Misafir listesi yönetmekten korkuyordum. Panel her şeyi halletti—günde bir kez baktım yetti."', who: '— S & M' },
+    { quote: '"Misafirler dakikalar içinde yanıtladı. Bazıları davetiye üzerinden bize mesaj bile yazdı."', who: '— M & J' },
+    { quote: '"Basılı davetiye kaosunu tamamen atladık. Düğün planlamasının en iyi kararıydı."', who: '— K & D' },
   ],
 };
 

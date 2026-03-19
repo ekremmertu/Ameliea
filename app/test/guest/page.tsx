@@ -25,7 +25,6 @@ const MOCK_INVITATION = {
   venueName: 'Gül Bahçesi Düğün Salonu',
   venueAddress: 'Örnek Mah. Düğün Sk. No:1, İstanbul',
   venueMapUrl: 'https://maps.google.com',
-  venuePhotos: [],
   personalMessage: 'Sizleri aramızda görmek bizi çok mutlu edecek.',
   rsvpDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   musicUrl: undefined,

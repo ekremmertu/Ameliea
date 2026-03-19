@@ -10,16 +10,13 @@ import { Journey } from '@/components/sections/Journey';
 import { LoveNotes } from '@/components/sections/LoveNotes';
 import { FAQ } from '@/components/sections/FAQ';
 import { IntroAnimation } from '@/components/sections/IntroAnimation';
-import { MusicPlayer } from '@/components/ui/MusicPlayer';
 import { DashboardPreview } from '@/components/sections/DashboardPreview';
 import { Pricing } from '@/components/sections/Pricing';
 import { ForPlanners } from '@/components/sections/ForPlanners';
 import { ContactInfo } from '@/components/sections/ContactInfo';
 import { Features } from '@/components/sections/Features';
-import { VideoShowcase } from '@/components/sections/VideoShowcase';
 import { Themes } from '@/components/sections/Themes';
 import { tokens } from '@/lib/design-tokens';
-import { getThemeAssetsByStyleKey } from '@/lib/theme-assets';
 import { useI18n } from '@/components/providers/I18nProvider';
 import { Button } from '@/components/ui/Button';
 
@@ -103,7 +100,6 @@ export default function Home() {
             </div>
             <Journey />
             <Themes />
-            <VideoShowcase videoUrl={getThemeAssetsByStyleKey('style_2')?.videoUrl} />
             <Features />
             <DashboardPreview />
             <Pricing />
@@ -163,12 +159,6 @@ export default function Home() {
           <Footer />
         </>
       )}
-      {/* Background Music Player */}
-      <MusicPlayer 
-        musicUrl="/music/background-romantic.mp3"
-        autoPlay={true}
-        themeColor="var(--crimson-base)"
-      />
     </>
   );
 }

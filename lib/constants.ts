@@ -48,20 +48,18 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
         'Profesyonel şablon davetiye',
         'Temel RSVP yönetimi',
         'Program zaman çizelgesi',
-        'Mekan fotoğrafları',
         'Google Maps entegrasyonu',
         'Sınırlı düzenleme (3 kez)',
-        '30 gün erişim',
+        '1 hafta erişim',
         'E-posta desteği',
       ],
       en: [
         'Professional template invitation',
         'Basic RSVP management',
         'Schedule timeline',
-        'Venue photos',
         'Google Maps integration',
         'Limited edits (3 times)',
-        '30-day access',
+        '7-day access',
         'Email support',
       ],
     },
@@ -93,7 +91,6 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
         'Profesyonel şablon davetiye',
         'Premium RSVP yönetim paneli',
         'Sınırsız düzenleme',
-        'Video & Müzik entegrasyonu',
         'Geri sayım sayacı',
         'Misafir soruları & mesajları',
         'Gelişmiş analitik',
@@ -105,7 +102,6 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
         'Professional template invitation',
         'Premium RSVP management dashboard',
         'Unlimited edits',
-        'Video & Music integration',
         'Countdown timer',
         'Guest questions & messages',
         'Advanced analytics',
@@ -116,7 +112,6 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
     },
     premiumOnlyFeatures: {
       tr: [
-        'Video & Müzik entegrasyonu',
         'Geri sayım sayacı',
         'Misafir soruları & mesajları',
         'Gelişmiş analitik',
@@ -125,7 +120,6 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
         'Ömür boyu erişim',
       ],
       en: [
-        'Video & Music integration',
         'Countdown timer',
         'Guest questions & messages',
         'Advanced analytics',
@@ -140,8 +134,8 @@ export const PLAN_PRICING: Record<PlanType, PlanDetail> = {
 
 export const UPSELL_COPY = {
   lightToPremiun: {
-    tr: 'Hikayenizi daha unutulmaz kılmak ister misiniz? Premium ile sınırsız düzenleme, video ve tam kontrol sizin.',
-    en: 'Want to make your story even more memorable? With Premium, unlimited edits, video and full control are yours.',
+    tr: 'Hikayenizi daha unutulmaz kılmak ister misiniz? Premium ile sınırsız düzenleme, gelişmiş analitik ve tam kontrol sizin.',
+    en: 'Want to make your story even more memorable? With Premium, unlimited edits, advanced analytics and full control are yours.',
   },
 } as const;
 
@@ -184,16 +178,6 @@ export const FILE_UPLOAD_LIMITS = {
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
     allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
   },
-  VIDEO: {
-    maxSize: 50 * 1024 * 1024, // 50MB
-    allowedTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
-    allowedExtensions: ['.mp4', '.webm', '.mov'],
-  },
-  AUDIO: {
-    maxSize: 10 * 1024 * 1024, // 10MB
-    allowedTypes: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'],
-    allowedExtensions: ['.mp3', '.wav', '.ogg'],
-  },
 } as const;
 
 // Content Limits
@@ -221,7 +205,6 @@ export const INVITATION_CONFIG = {
   MAX_GUESTS: 500,
   MAX_SCHEDULE_ITEMS: 20,
   MAX_QUESTIONS: 10,
-  MAX_VENUE_PHOTOS: 10,
 } as const;
 
 // Theme IDs

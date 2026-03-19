@@ -14,6 +14,7 @@ import { BackButton } from '@/components/ui/BackButton';
 import { ThemeId, THEMES } from '@/lib/themes';
 import { getThemeIdFromTemplateId } from '@/lib/theme-assets';
 import { getUserPlanType, type PlanType } from '@/lib/purchase';
+import { PLAN_PRICING, PLAN_TYPES, type PlanType as PricingPlanType } from '@/lib/constants';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { showToast } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
@@ -106,7 +107,6 @@ interface CustomizationData {
   venueName: string;
   venueAddress: string;
   venueMapUrl: string;
-  venuePhotos: string[]; // Max 3 images
   personalMessage: string;
   musicUrl: string;
   videoUrl: string;
@@ -155,6 +155,7 @@ export default function CustomizePage() {
   const [existingInvitationId, setExistingInvitationId] = useState<string | null>(null);
   const [showOpeningMessage, setShowOpeningMessage] = useState(true);
   const [userPlanType, setUserPlanType] = useState<PlanType>(null);
+  const [selectedPlanForPurchase, setSelectedPlanForPurchase] = useState<PricingPlanType | null>(null);
   const supabase = createSupabaseBrowserClient();
 
   const getEventIcon = (eventName: string): string => {
@@ -203,7 +204,6 @@ export default function CustomizePage() {
     venueName: '',
     venueAddress: '',
     venueMapUrl: '',
-    venuePhotos: [],
     personalMessage: lang === 'tr' ? 'Bu davetiye sadece senin için' : 'This invitation is exclusive for you',
     musicUrl: '',
     videoUrl: '',
@@ -363,6 +363,12 @@ export default function CustomizePage() {
     });
   }, [supabase]);
 
+  useEffect(() => {
+    if (userPlanType === PLAN_TYPES.LIGHT || userPlanType === PLAN_TYPES.PREMIUM) {
+      setSelectedPlanForPurchase(userPlanType);
+    }
+  }, [userPlanType]);
+
   // Update form data when language changes
   useEffect(() => {
     setFormData(prev => ({
@@ -377,6 +383,19 @@ export default function CustomizePage() {
     setSaving(true);
 
     try {
+      if (!userPlanType) {
+        if (!selectedPlanForPurchase) {
+          showToast(
+            lang === 'tr' ? 'Lutfen Light veya Premium paket secin.' : 'Please choose Light or Premium plan.',
+            'error'
+          );
+          setSaving(false);
+          return;
+        }
+        router.push(`/checkout?plan=${selectedPlanForPurchase}`);
+        return;
+      }
+
       let invitationId: string;
       let slug: string;
 
@@ -425,7 +444,6 @@ export default function CustomizePage() {
             venueName: formData.venueName,
             venueAddress: formData.venueAddress,
             venueMapUrl: formData.venueMapUrl,
-            venuePhotos: formData.venuePhotos,
             personalMessage: formData.personalMessage,
             musicUrl: formData.musicUrl,
             videoUrl: formData.videoUrl,
@@ -650,48 +668,26 @@ export default function CustomizePage() {
                 </div>
               </div>
 
-              {/* Countdown Timer - Premium Only */}
-              {userPlanType === 'premium' ? (
-                formData.weddingDate && formData.weddingTime && (
-                  <div className="mt-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <h3 className="text-lg font-semibold" style={{ color: tokens.colors.text.primary }}>
-                        {lang === 'tr' ? 'Geri Sayım Sayacı' : 'Countdown Timer'}
-                      </h3>
-                      <span className="text-sm px-2 py-1 rounded-full" style={{ 
-                        backgroundColor: 'rgba(200, 162, 74, 0.1)',
-                        color: 'var(--gold-base)',
-                      }}>
-                        ⭐ {lang === 'tr' ? 'Premium' : 'Premium'}
-                      </span>
-                    </div>
-                    <CountdownTimer 
-                      key={`${formData.weddingDate}-${formData.weddingTime}`}
-                      weddingDate={formData.weddingDate} 
-                      weddingTime={formData.weddingTime} 
-                      themeColor={formData.theme.primaryColor}
-                    />
-                  </div>
-                )
-              ) : userPlanType === 'light' && formData.weddingDate && formData.weddingTime && (
-                <div className="mt-6 p-4 rounded-xl opacity-60" style={{ backgroundColor: 'var(--bg-panel)' }}>
-                  <div className="flex items-center justify-between mb-2">
+              {/* Countdown Timer — tarih ve saat girildiğinde anında başlar */}
+              {formData.weddingDate && formData.weddingTime && (
+                <motion.div
+                  className="mt-6"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
                     <h3 className="text-lg font-semibold" style={{ color: tokens.colors.text.primary }}>
                       {lang === 'tr' ? 'Geri Sayım Sayacı' : 'Countdown Timer'}
                     </h3>
-                    <span className="text-sm px-3 py-1 rounded-full font-medium" style={{ 
-                      backgroundColor: 'rgba(200, 162, 74, 0.1)',
-                      color: 'var(--gold-base)',
-                    }}>
-                      ⭐ {lang === 'tr' ? 'Premium Özellik' : 'Premium Feature'}
-                    </span>
                   </div>
-                  <p className="text-sm" style={{ color: tokens.colors.text.secondary }}>
-                    {lang === 'tr' 
-                      ? 'Bu özellik Premium plana özeldir. Yükseltmek için Premium planı seçin.'
-                      : 'This feature is exclusive to Premium plan. Upgrade to Premium to unlock.'}
-                  </p>
-                </div>
+                  <CountdownTimer 
+                    key={`${formData.weddingDate}-${formData.weddingTime}`}
+                    weddingDate={formData.weddingDate} 
+                    weddingTime={formData.weddingTime} 
+                    themeColor={formData.theme.primaryColor}
+                  />
+                </motion.div>
               )}
 
               <div className="grid md:grid-cols-2 gap-6 mt-6">
@@ -1302,6 +1298,89 @@ export default function CustomizePage() {
             </section>
             )}
 
+            {/* Plan Selection */}
+            <section className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-panel-strong)' }}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold mb-2" style={{ color: tokens.colors.text.primary }}>
+                    {lang === 'tr' ? 'Paket Secimi' : 'Plan Selection'}
+                  </h2>
+                  <p className="text-sm" style={{ color: tokens.colors.text.secondary }}>
+                    {lang === 'tr'
+                      ? 'Premium ozellikler yildiz ile gosterilir.'
+                      : 'Premium-only features are marked with a star.'}
+                  </p>
+                </div>
+                {userPlanType && (
+                  <span
+                    className="text-sm px-3 py-1 rounded-full font-medium"
+                    style={{ backgroundColor: 'rgba(200, 162, 74, 0.1)', color: 'var(--gold-base)' }}
+                  >
+                    {lang === 'tr' ? 'Aktif Paket' : 'Active Plan'}: {PLAN_PRICING[userPlanType].name[lang]}
+                  </span>
+                )}
+              </div>
+
+              {!userPlanType && (
+                <p className="text-sm mb-4" style={{ color: tokens.colors.text.secondary }}>
+                  {lang === 'tr'
+                    ? 'Satin al butonuna basmadan once paket secimi yapin.'
+                    : 'Choose your plan before clicking the purchase button.'}
+                </p>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {(Object.values(PLAN_TYPES) as PricingPlanType[]).map((planType) => {
+                  const planDetail = PLAN_PRICING[planType];
+                  const isSelected = selectedPlanForPurchase === planType;
+                  const canChange = !userPlanType;
+                  return (
+                    <button
+                      key={planType}
+                      type="button"
+                      onClick={() => {
+                        if (canChange) setSelectedPlanForPurchase(planType);
+                      }}
+                      className="text-left p-4 rounded-xl border transition-all disabled:cursor-not-allowed"
+                      disabled={!canChange}
+                      style={{
+                        borderColor: isSelected ? formData.theme.primaryColor : 'var(--border-base)',
+                        backgroundColor: 'var(--bg-panel)',
+                        opacity: canChange || isSelected ? 1 : 0.85,
+                      }}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="text-lg font-semibold" style={{ color: tokens.colors.text.primary }}>
+                            {planDetail.name[lang]}
+                          </h3>
+                          <p className="text-sm" style={{ color: tokens.colors.text.secondary }}>
+                            {planDetail.tagline[lang]}
+                          </p>
+                        </div>
+                        <span className="text-lg font-bold" style={{ color: tokens.colors.text.primary }}>
+                          ₺{planDetail.amount.toLocaleString('tr-TR')}
+                        </span>
+                      </div>
+                      <ul className="space-y-1 mt-3">
+                        {planDetail.features[lang].map((feature) => {
+                          const isPremiumOnly = planDetail.premiumOnlyFeatures[lang].includes(feature);
+                          return (
+                            <li key={`${planType}-${feature}`} className="text-sm flex items-start gap-2" style={{ color: tokens.colors.text.secondary }}>
+                              <span style={{ color: isPremiumOnly ? 'var(--gold-base)' : tokens.colors.text.secondary }}>
+                                {isPremiumOnly ? '★' : '✓'}
+                              </span>
+                              <span>{feature}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
             {/* Preview Link Section - Show after creation */}
             {previewLink && (
               <section className="p-6 rounded-xl border-2" style={{ backgroundColor: 'var(--bg-panel-strong)', borderColor: formData.theme.primaryColor }}>
@@ -1415,17 +1494,21 @@ export default function CustomizePage() {
               </button>
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || (!userPlanType && !selectedPlanForPurchase)}
                 className="flex-1 px-6 py-4 rounded-full font-semibold text-lg transition-all min-h-[44px]"
                 style={{
-                  backgroundColor: saving ? 'var(--text-muted)' : formData.theme.primaryColor,
+                  backgroundColor: (saving || (!userPlanType && !selectedPlanForPurchase)) ? 'var(--text-muted)' : formData.theme.primaryColor,
                   color: 'white',
-                  cursor: saving ? 'not-allowed' : 'pointer',
+                  cursor: (saving || (!userPlanType && !selectedPlanForPurchase)) ? 'not-allowed' : 'pointer',
                 }}
               >
                 {saving 
                   ? (lang === 'tr' ? 'Oluşturuluyor...' : 'Creating...')
-                  : (lang === 'tr' ? '💳 Satın Al ve Oluştur' : '💳 Purchase & Create')}
+                  : !userPlanType
+                  ? (lang === 'tr'
+                      ? `💳 ${selectedPlanForPurchase ? PLAN_PRICING[selectedPlanForPurchase].name.tr : ''} Paketiyle Satin Al`
+                      : `💳 Purchase with ${selectedPlanForPurchase ? PLAN_PRICING[selectedPlanForPurchase].name.en : 'selected plan'}`)
+                  : (lang === 'tr' ? '💳 Satin Al ve Olustur' : '💳 Purchase & Create')}
               </button>
             </div>
           </form>

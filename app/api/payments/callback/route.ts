@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     if (callbackResult.paymentStatus === 'SUCCESS') {
       const expiresAt =
         purchase.plan_type === 'light'
-          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           : null;
 
       await supabase
@@ -165,8 +165,8 @@ export async function POST(req: Request) {
       // Payment successful - update purchase status
       const expiresAt =
         purchase.plan_type === 'light'
-          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 1 month
-          : null; // Premium = lifetime
+          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          : null;
 
       const { error: updateError } = await supabase
         .from('purchases')

@@ -31,7 +31,6 @@ interface InvitationData {
   venueName: string;
   venueAddress: string;
   venueMapUrl?: string;
-  venuePhotos?: string[];
   personalMessage?: string;
   rsvpDeadline?: string;
   musicUrl?: string;
@@ -100,7 +99,6 @@ export default function InvitationPage() {
           venueName: data.venueName || data.location,
           venueAddress: data.venueAddress || data.location,
           venueMapUrl: data.venueMapUrl,
-          venuePhotos: data.venuePhotos || [],
           personalMessage: data.personalMessage,
           rsvpDeadline: data.rsvpDeadline,
           musicUrl: data.musicUrl,

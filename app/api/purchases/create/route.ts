@@ -67,16 +67,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Calculate expires_at based on plan_type
-    // Light plan: 1 month from now
+    // Light plan: 1 week from now
     // Premium plan: Lifetime (null)
     let expiresAt: string | null = null;
     if (parsed.data.plan_type === 'light') {
       const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + 1); // Add 1 month
+      expiryDate.setDate(expiryDate.getDate() + 7);
       expiresAt = expiryDate.toISOString();
     }
-    // Premium plan: expires_at remains null (lifetime access)
 
     // Create purchase record
     const { data: purchase, error: insertError } = await supabase

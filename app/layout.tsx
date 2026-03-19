@@ -45,11 +45,6 @@ export const metadata: Metadata = {
     locale: "en_US",
     alternateLocale: ["tr_TR"],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Ameliea — Premium Digital Invitations",
-    description: "An invitation that feels like a vow.",
-  },
   robots: {
     index: true,
     follow: true,
@@ -88,9 +83,10 @@ export default function RootLayout({
               "description": "Premium digital invitations crafted with love, elegance, and the beauty of the soul.",
               "url": "https://www.ameliea.co",
               "logo": "https://www.ameliea.co/logo.png",
-              "sameAs": [],
+              "sameAs": ["https://instagram.com/Ameliea.co"],
               "contactPoint": {
                 "@type": "ContactPoint",
+                "email": "amelieadestek@gmail.com",
                 "contactType": "Customer Service",
                 "availableLanguage": ["English", "Turkish"]
               }
